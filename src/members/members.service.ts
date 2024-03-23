@@ -1,18 +1,19 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { Member, MemberDocument } from '../common/mongoose/schemas/member';
+import { Member, type MemberDocument } from '../common/mongoose/schemas/member';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { CreateMemberDto } from '../common/dto/member';
+import { type CreateMemberDto } from '../common/dto/member';
 
 @Injectable()
 export class MembersService {
   constructor(
-    @InjectModel(Member.name) private memberModel: Model<MemberDocument>,
+    @InjectModel(Member.name)
+    private readonly memberModel: Model<MemberDocument>,
   ) {}
 
   async create(createMemberDto: CreateMemberDto): Promise<MemberDocument> {
     const createdMember = new this.memberModel(createMemberDto);
-    return createdMember.save();
+    return await createdMember.save();
   }
 
   async createMany(
