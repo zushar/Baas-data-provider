@@ -30,7 +30,7 @@ export function validate(config: Record<string, unknown>) {
   });
 
   if (errors.length > 0) {
-    Logger.error(`Failed to validate .nev configuration`);
+    Logger.error('Failed to validate .nev configuration');
     throw new Error(errors.toString());
   }
   return validatedConfig;

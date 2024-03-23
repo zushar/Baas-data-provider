@@ -1,5 +1,5 @@
-import { ArgumentsHost, HttpException } from '@nestjs/common';
-import { Response, Request } from 'express';
+import { type ArgumentsHost, HttpException } from '@nestjs/common';
+import { type Response, type Request } from 'express';
 import HttpExceptionFilter from './http-exception-filter';
 
 describe('HttpExceptionFilter', () => {

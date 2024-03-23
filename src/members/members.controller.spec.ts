@@ -1,7 +1,7 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { MembersController } from './members.controller';
 import { MembersService } from './members.service';
-import { CreateMemberDto } from '../common/dto/member';
+import { type CreateMemberDto } from '../common/dto/member';
 
 describe('MembersController', () => {
   let controller: MembersController;

@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { MembersService } from './members.service';
-import { CreateMemberDto } from '../common/dto/member';
+import { type CreateMemberDto } from '../common/dto/member';
 
 @Controller('members')
 export class MembersController {
@@ -9,9 +9,9 @@ export class MembersController {
   @Post()
   async create(@Body() createMemberDto: CreateMemberDto | CreateMemberDto[]) {
     if (Array.isArray(createMemberDto)) {
-      return this.membersService.createMany(createMemberDto);
+      return await this.membersService.createMany(createMemberDto);
     } else {
-      return this.membersService.create(createMemberDto);
+      return await this.membersService.create(createMemberDto);
     }
   }
 }

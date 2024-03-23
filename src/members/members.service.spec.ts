@@ -1,17 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { MembersService } from './members.service';
 import {
   Member,
-  MemberDocument,
+  type MemberDocument,
   MemberSchema,
 } from '../common/mongoose/schemas/member';
-import { Model } from 'mongoose';
+import { type Model } from 'mongoose';
 import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import {
   TestDbModule,
   closeInMongodConnection,
 } from '../../test/mocks/module/mongo-in-memory';
-import { CreateMemberDto } from '../common/dto/member';
+import { type CreateMemberDto } from '../common/dto/member';
 import { BadRequestException } from '@nestjs/common';
 
 describe('MembersService', () => {
