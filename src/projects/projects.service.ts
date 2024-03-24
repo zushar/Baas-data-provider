@@ -110,6 +110,7 @@ export class ProjectsService implements OnModuleInit {
     projects: ProjectDocument[];
     timestamp: Date | null;
     pageLanguages: string[];
+    total: number;
     languages: string[];
   }> {
     // Query the most recent timestamp from the languages collection
@@ -119,6 +120,7 @@ export class ProjectsService implements OnModuleInit {
       return {
         projects: [],
         timestamp: null,
+        total: 0,
         pageLanguages: [],
         languages: [],
       };
@@ -130,8 +132,14 @@ export class ProjectsService implements OnModuleInit {
       filter,
     });
 
+    // get total count of projects
+    const totalProjects = await this.projectModel
+      .countDocuments({ timestamp: languages.timestamp })
+      .exec();
+
     return {
       projects,
+      total: totalProjects,
       languages: languages.languages,
       pageLanguages: this.buildLanguageUniqueArray(projects),
       timestamp: languages.timestamp,
