@@ -108,12 +108,13 @@ export class ProjectsService implements OnModuleInit {
     filter,
   }: ProjectPaginationRequest): Promise<{
     projects: ProjectDocument[];
+    timestamp: Date | null;
     languages: string[];
   }> {
     // Query the most recent timestamp from the languages collection
     const languages = await this.getLanguages();
 
-    if (!languages) return { projects: [], languages: [] };
+    if (!languages) return { projects: [], timestamp: null, languages: [] };
 
     const projects = await this.getPaginatedProjects({
       page,
@@ -122,7 +123,11 @@ export class ProjectsService implements OnModuleInit {
       filter,
     });
 
-    return { projects, languages: languages.languages };
+    return {
+      projects,
+      languages: languages.languages,
+      timestamp: languages.timestamp,
+    };
   }
 
   async getPaginatedProjects({
