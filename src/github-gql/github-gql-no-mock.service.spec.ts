@@ -4,6 +4,7 @@ import { queryProjectDetails } from './queries/projects';
 import { AnyVariables, Client, fetchExchange } from '@urql/core';
 import { TypedConfigModule, dotenvLoader } from 'nest-typed-config';
 import { RootConfig, validate } from '@/config/env.validation';
+import { IGQLProjectResponse } from '@/types/project';
 
 // ONLY RUN MANUALLY FOR SANITY CHECK AND WHILE DEVELOPING
 describe.skip('GithubGqlService', () => {
@@ -54,8 +55,17 @@ describe.skip('GithubGqlService', () => {
   });
 
   it('should send a query', async () => {
-    const result = await service.query(queryProjectDetails, repoParams);
+    const result: IGQLProjectResponse = await service['query'](
+      queryProjectDetails,
+      repoParams,
+    );
 
     expect(result?.data?.repository.name).toBe(repoParams.name);
+  });
+
+  it('should fetch array of project responses', async () => {
+    const result = await service.getProjects();
+    console.log('🚀 ~ it ~ result:', result);
+    expect(result).toBeDefined();
   });
 });

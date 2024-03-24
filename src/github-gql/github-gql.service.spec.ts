@@ -46,7 +46,7 @@ describe('GithubGqlService', () => {
   });
 
   it('should send a query', async () => {
-    await service.query(queryProjectDetails, repoParams);
+    await service['query'](queryProjectDetails, repoParams);
 
     const spyClient = jest.spyOn(service['client'], 'query');
 

@@ -4,3 +4,11 @@ export enum Environment {
   PRODUCTION = 'production',
   TEST = 'test',
 }
+
+export interface IGithubGQLResponse<T> {
+  item: T | null;
+  error: Error | null;
+  meta?: {
+    [key: string]: unknown;
+  };
+}

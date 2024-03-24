@@ -6,6 +6,7 @@ import { RootConfig, validate } from './config/env.validation';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MembersModule } from './members/members.module';
 import { GithubGqlModule } from './github-gql/github-gql.module';
+import { ProjectsModule } from './projects/projects.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { GithubGqlModule } from './github-gql/github-gql.module';
     }),
     MembersModule,
     GithubGqlModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

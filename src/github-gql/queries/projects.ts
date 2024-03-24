@@ -4,6 +4,11 @@ export const queryProjectDetails = gql`
   query GetProject($owner: String!, $name: String!) {
     repository(owner: $owner, name: $name) {
       name
+      owner {
+        id
+        login
+        avatarUrl
+      }
       openGraphImageUrl
       description
       url
