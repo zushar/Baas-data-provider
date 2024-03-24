@@ -54,3 +54,17 @@ export interface ILanguagesEdge {
 export interface ILanguageNode {
   name: string;
 }
+
+export enum ProjectPaginationFilter {
+  ALL = 'all',
+  RECENTLY_UPDATED = 'recently_updated',
+  MOST_CONTROBUTORS = 'most_contributors',
+  RECENTLY_CREATED = 'recently_created',
+}
+
+export interface ProjectPaginationRequest {
+  page: number;
+  limit: number;
+  timestamp?: Date;
+  filter: ProjectPaginationFilter;
+}
