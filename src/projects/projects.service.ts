@@ -109,12 +109,19 @@ export class ProjectsService implements OnModuleInit {
   }: ProjectPaginationRequest): Promise<{
     projects: ProjectDocument[];
     timestamp: Date | null;
+    pageLanguages: string[];
     languages: string[];
   }> {
     // Query the most recent timestamp from the languages collection
     const languages = await this.getLanguages();
 
-    if (!languages) return { projects: [], timestamp: null, languages: [] };
+    if (!languages)
+      return {
+        projects: [],
+        timestamp: null,
+        pageLanguages: [],
+        languages: [],
+      };
 
     const projects = await this.getPaginatedProjects({
       page,
@@ -126,6 +133,7 @@ export class ProjectsService implements OnModuleInit {
     return {
       projects,
       languages: languages.languages,
+      pageLanguages: this.buildLanguageUniqueArray(projects),
       timestamp: languages.timestamp,
     };
   }
