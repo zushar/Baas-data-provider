@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { IsEnum, IsNumber, IsString, validateSync } from 'class-validator';
-import { Environment } from 'src/types';
+import { Environment } from '@/types';
 
 @Injectable()
 export class RootConfig {
@@ -19,6 +19,8 @@ export class RootConfig {
   MONGO_USER: string;
   @IsString()
   MONGO_PASS: string;
+  @IsString()
+  GITHUB_TOKEN: string;
 }
 
 export function validate(config: Record<string, unknown>) {
