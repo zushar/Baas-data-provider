@@ -23,6 +23,6 @@ import { RootConfig } from '@/config/env.validation';
       inject: [RootConfig],
     },
   ],
-  imports: [RootConfig],
+  exports: [GithubGqlService],
 })
 export class GithubGqlModule {}
