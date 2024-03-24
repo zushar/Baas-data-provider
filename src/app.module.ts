@@ -5,6 +5,7 @@ import { TypedConfigModule, dotenvLoader } from 'nest-typed-config';
 import { RootConfig, validate } from './config/env.validation';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MembersModule } from './members/members.module';
+import { GithubGqlModule } from './github-gql/github-gql.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { MembersModule } from './members/members.module';
       inject: [RootConfig],
     }),
     MembersModule,
+    GithubGqlModule,
   ],
   controllers: [AppController],
   providers: [AppService],
