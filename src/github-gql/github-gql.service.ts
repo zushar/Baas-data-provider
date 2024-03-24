@@ -5,6 +5,10 @@ import {
   TypedDocumentNode,
   // cacheExchange, // TODO: determine later if caching is needed in this context
 } from '@urql/core';
+import * as projectJsons from '@/../jsons/projects.json';
+import { IGQLProjectResponse } from '@/types/project';
+import { queryProjectDetails } from './queries/projects';
+import { IGithubGQLResponse } from '@/types';
 
 @Injectable()
 export class GithubGqlService {
@@ -12,9 +16,30 @@ export class GithubGqlService {
     private readonly client: Client, // Inject URQL Client
   ) {}
 
-  async query(query: TypedDocumentNode, variables: AnyVariables) {
+  private query<T>(query: TypedDocumentNode, variables: AnyVariables) {
     return this.client
       .query(query, variables as { [key: string]: never })
-      .toPromise();
+      .toPromise() as Promise<T>;
+  }
+
+  async getProjects(): Promise<IGithubGQLResponse<IGQLProjectResponse>[]> {
+    const repoLinks = projectJsons.map((project) => project.githubLink);
+
+    if (!repoLinks?.length) {
+      throw new Error('No projects found');
+    }
+
+    const requests = repoLinks.map((link) => {
+      const [owner, name] = link.replace('https://github.com/', '').split('/');
+      return this.query<IGQLProjectResponse>(queryProjectDetails, {
+        owner,
+        name,
+      })
+        .then((data) => ({ item: data, error: null, meta: { link } }))
+        .catch((error) => ({ item: null, error, meta: { link } }));
+    });
+
+    const results = await Promise.all(requests);
+    return results;
   }
 }
