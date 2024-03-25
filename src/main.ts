@@ -23,7 +23,7 @@ async function bootstrap() {
       }),
     );
 
-    await app.listen(3000);
+    await app.listen(PORT || 3000);
     Logger.log(`Server started on port ${PORT}`);
   } catch (error) {
     Logger.error('Failed to start server', error);
