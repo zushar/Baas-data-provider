@@ -24,4 +24,4 @@ RUN pnpm run build
 EXPOSE 3000
 
 # Define the command to run your app (adjust if your main file has a different name)
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
