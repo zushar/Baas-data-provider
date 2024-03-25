@@ -21,7 +21,8 @@ import { ProjectsModule } from './projects/projects.module';
     MongooseModule.forRootAsync({
       imports: [TypedConfigModule],
       useFactory: async (config: RootConfig) => {
-        const connection = `mongodb://${config.MONGO_USER}:${config.MONGO_PASS}@${config.MONGO_HOST}:${config.MONGO_PORT}/${config.MONGO_DB}`;
+        const connection = config.MONGO_URI;
+        // const connection = `mongodb://${config.MONGO_USER}:${config.MONGO_PASS}@${config.MONGO_HOST}:${config.MONGO_PORT}/${config.MONGO_DB}`;
         return {
           connectionFactory: (connection) => {
             if (connection.readyState === 1) {

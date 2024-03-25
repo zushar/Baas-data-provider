@@ -21,6 +21,8 @@ export class RootConfig {
   MONGO_PASS: string;
   @IsString()
   GITHUB_TOKEN: string;
+  @IsString()
+  MONGO_URI: string;
 }
 
 export function validate(config: Record<string, unknown>) {
