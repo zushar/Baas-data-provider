@@ -6,9 +6,12 @@ import {
   // cacheExchange, // TODO: determine later if caching is needed in this context
 } from '@urql/core';
 import * as projectJsons from '@/../jsons/projects.json';
+import * as memberJsons from '@/../jsons/members.json';
 import { IGQLProjectResponse } from '@/types/project';
 import { queryProjectDetails } from './queries/projects';
 import { IGithubGQLResponse } from '@/types';
+import { queryMember } from './queries/member';
+import { IGQLMembersResponse } from '@/types/member';
 
 @Injectable()
 export class GithubGqlService {
@@ -37,6 +40,23 @@ export class GithubGqlService {
       })
         .then((data) => ({ item: data, error: null, meta: { link } }))
         .catch((error) => ({ item: null, error, meta: { link } }));
+    });
+
+    const results = await Promise.all(requests);
+    return results;
+  }
+
+  async getMembers() {
+    const requests = memberJsons.map((member) => {
+      const login = member.links.github.replace('https://github.com/', '');
+
+      return this.query<IGQLMembersResponse>(queryMember, { login })
+        .then((data) => ({
+          item: data,
+          error: null,
+          meta: { ...member },
+        }))
+        .catch((error) => ({ item: null, error, meta: { ...member } }));
     });
 
     const results = await Promise.all(requests);
