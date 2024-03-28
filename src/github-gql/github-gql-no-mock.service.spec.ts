@@ -50,22 +50,32 @@ describe.skip('GithubGqlService', () => {
     service = module.get<GithubGqlService>(GithubGqlService);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  describe('query', () => {
+    it('should be defined', () => {
+      expect(service).toBeDefined();
+    });
+
+    it('should send a query', async () => {
+      const result: IGQLProjectResponse = await service['query'](
+        queryProjectDetails,
+        repoParams,
+      );
+
+      expect(result?.data?.repository.name).toBe(repoParams.name);
+    });
   });
 
-  it('should send a query', async () => {
-    const result: IGQLProjectResponse = await service['query'](
-      queryProjectDetails,
-      repoParams,
-    );
-
-    expect(result?.data?.repository.name).toBe(repoParams.name);
+  describe('getProjects', () => {
+    it('should fetch array of project responses', async () => {
+      const result = await service.getProjects();
+      expect(result).toBeDefined();
+    });
   });
 
-  it('should fetch array of project responses', async () => {
-    const result = await service.getProjects();
-    console.log('🚀 ~ it ~ result:', result);
-    expect(result).toBeDefined();
+  describe('getMembers', () => {
+    it('should fetch a single project response', async () => {
+      const result = await service.getMembers();
+      expect(result).toBeDefined();
+    });
   });
 });

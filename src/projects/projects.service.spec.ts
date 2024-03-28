@@ -165,7 +165,6 @@ describe('ProjectsService', () => {
 
       const foundProjects = await projectModel.find();
       expect(foundProjects).not.toHaveLength(0);
-      console.log('🚀 ~ it ~ projects:', foundProjects);
 
       const request = {
         page: 1,
@@ -233,7 +232,6 @@ describe('ProjectsService', () => {
         filter: ProjectPaginationFilter.ALL,
       };
       const projects = await service.getPaginatedProjects(request);
-      console.log('🚀 ~ it ~ projects:', projects);
       expect(projects).toHaveLength(2);
       // Add more specific checks here if necessary
     });
@@ -247,10 +245,9 @@ describe('ProjectsService', () => {
       };
       const projects = await service.getPaginatedProjects(request);
       expect(projects).toHaveLength(2);
-      const mappedDatesCreatedAt = projects.map(
-        (project) => new Date(project.item.data.repository.createdAt),
-      );
-      console.log('🚀 ~ it ~ mappedDatesCreatedAt:', mappedDatesCreatedAt);
+      // const mappedDatesCreatedAt = projects.map(
+      //   (project) => new Date(project.item.data.repository.createdAt),
+      // );
       expect(new Date(projects[0].item.data.repository.createdAt)).toEqual(
         dateLatestCreated,
       );

@@ -2,7 +2,7 @@ import { gql } from '@urql/core';
 
 export const queryMember = gql`
   query GetMember($login: String!) {
-    user(login: "$login") {
+    user(login: $login) {
       id
       name
       anyPinnableItems
