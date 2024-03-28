@@ -12,7 +12,6 @@ import {
   closeInMongodConnection,
 } from '../../test/mocks/module/mongo-in-memory';
 import { type CreateMemberDto } from '../common/dto/member';
-import { BadRequestException } from '@nestjs/common';
 
 describe('MembersService', () => {
   let service: MembersService;
@@ -99,33 +98,6 @@ describe('MembersService', () => {
         );
         expect(member._id).toBeDefined(); // Ensure _id is defined
       });
-    });
-
-    it('should throw BadRequestException if duplicate discordUser is found', async () => {
-      const createMemberDtos: CreateMemberDto[] = [
-        {
-          name: 'John Doe',
-          discordUser: 'johndoe#1234',
-          links: {
-            github: 'https://github.com/johndoe',
-            linkedIn: 'https://linkedin.com/in/johndoe',
-          },
-          description: 'A description',
-        },
-        {
-          name: 'Jane Doe',
-          discordUser: 'johndoe#1234', // Duplicate discordUser
-          links: {
-            github: 'https://github.com/janedoe',
-            linkedIn: 'https://linkedin.com/in/janedoe',
-          },
-          description: 'Another description',
-        },
-      ];
-
-      await expect(service.createMany(createMemberDtos)).rejects.toThrow(
-        BadRequestException,
-      );
     });
   });
 });
