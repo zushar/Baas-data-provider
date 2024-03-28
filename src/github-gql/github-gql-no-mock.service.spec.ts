@@ -68,7 +68,6 @@ describe.skip('GithubGqlService', () => {
   describe('getProjects', () => {
     it('should fetch array of project responses', async () => {
       const result = await service.getProjects();
-      console.log('🚀 ~ it ~ result:', result);
       expect(result).toBeDefined();
     });
   });
@@ -76,7 +75,6 @@ describe.skip('GithubGqlService', () => {
   describe('getMembers', () => {
     it('should fetch a single project response', async () => {
       const result = await service.getMembers();
-      console.log('🚀 ~ it ~ result:', result);
       expect(result).toBeDefined();
     });
   });
