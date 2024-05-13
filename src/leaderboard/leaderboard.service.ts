@@ -1,31 +1,19 @@
-import {
-  Leaderboard,
-  LeaderboardDocument,
-} from '@/common/mongoose/schemas/leaderboard';
-import { GithubGqlService } from '@/github-gql/github-gql.service';
+import getLeaderboardDataFromGithub from '@/common/utils/getLeaderBoardDataFromGithub';
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 
 @Injectable()
 export class LeaderboardService implements OnModuleInit {
-  constructor(
-    private readonly githubGqlService: GithubGqlService,
-    @InjectModel(Leaderboard.name)
-    private readonly projectModel: Model<LeaderboardDocument>,
-  ) {}
   onModuleInit() {
-    throw new Error('Method not implemented.');
+    // Perform initialization tasks here
+    console.log('MyService has been initialized');
+    // You can also perform asynchronous operations here
   }
-  //   async onModuleInit(): Promise<void> {
-  //     await this.handleCron();
-  //   }
-  //   @Cron(CronExpression.EVERY_5_SECONDS)
-  //   async handleCron() {
-  //     console.log('Cron job is running');
-  //   }
 
   async getLeaderboardData() {
-    return this.projectModel.find();
+    console.log('getLeaderboardData');
+
+    return (await getLeaderboardDataFromGithub()).data.map(([, data]) => {
+      return data;
+    });
   }
 }

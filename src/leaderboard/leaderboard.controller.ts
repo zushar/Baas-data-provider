@@ -1,8 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import { LeaderboardService } from './leaderboard.service';
 
-@Controller('projects')
-export class ProjectsController {
+@Controller('leaderboard')
+export class LeaderboardController {
   constructor(private readonly projectsService: LeaderboardService) {}
 
   @Get('/')

@@ -7,6 +7,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MembersModule } from './members/members.module';
 import { GithubGqlModule } from './github-gql/github-gql.module';
 import { ProjectsModule } from './projects/projects.module';
+import { LeaderboardModule } from './leaderboard/leaderboard.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { ProjectsModule } from './projects/projects.module';
     MembersModule,
     GithubGqlModule,
     ProjectsModule,
+    LeaderboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

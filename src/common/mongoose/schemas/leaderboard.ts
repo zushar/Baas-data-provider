@@ -12,4 +12,4 @@ export class Leaderboard {
   languages: string[];
 }
 
-export const LanguageSchema = SchemaFactory.createForClass(Leaderboard);
+export const LeaderboardSchema = SchemaFactory.createForClass(Leaderboard);
