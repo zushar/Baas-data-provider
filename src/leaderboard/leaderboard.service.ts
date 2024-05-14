@@ -11,10 +11,12 @@ export class LeaderboardService implements OnModuleInit {
   }
 
   async getLeaderboardData() {
+    const since = '2024-01-05T00:00:00Z';
+    const until = '2024-04-12T00:00:00Z';
     return {
       members: getLeaderBoardDataFROMJSON(),
-      since: '2021-01-01',
-      until: '2021-01-31',
+      since,
+      until,
     } as LeaderboardTypeAnalytics;
   }
 }
