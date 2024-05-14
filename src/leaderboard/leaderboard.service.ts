@@ -7,6 +7,9 @@ export class LeaderboardService implements OnModuleInit {
     // Perform initialization tasks here
     console.log('MyService has been initialized');
     // Cron job to fetch and save leaderboard data into the database
+    // TODO: add testing for service and controller
+    // TODO: move types
+    // TODO: dto for controller
   }
 
   async getLeaderboardData() {
