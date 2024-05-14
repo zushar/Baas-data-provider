@@ -5,7 +5,6 @@ describe('GithubGqlService', () => {
   it('Should parse successfully the data from the JSON file', () => {
     const data = getLeaderBoardDataFROMJSON();
     const parsedData = LeaderboardAnalyticsSchema.safeParse(data);
-    expect(true).toBe(parsedData.success);
-    console.log(parsedData.data);
+    expect(parsedData.error).toBe(undefined);
   });
 });
