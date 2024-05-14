@@ -5,11 +5,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 
 @Injectable()
 export class LeaderboardService implements OnModuleInit {
-  onModuleInit() {
-    // TODO: add testing for service and controller
-    // TODO: move types
-    // TODO: dto for controller
-  }
+  onModuleInit() {}
 
   async getLeaderboardData(): Promise<AnalyticsDto> {
     const since = '2024-01-05T00:00:00Z';
