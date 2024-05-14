@@ -1,25 +1,31 @@
-type LeaderboardTypeMember = {
-  name: string;
-  node_id: string;
-  projects_names: LeaderboardTypeProjectName[];
-  avatar_url: string;
-  score: number;
-  stats: LeaderboardTypeMemberStats;
-};
+import * as z from 'zod';
 
-type LeaderboardTypeProjectName = {
-  url: string;
-  name: string;
-};
+const LeaderboardProjectNameSchema = z.object({
+  url: z.string(),
+  name: z.string(),
+});
 
-type LeaderboardTypeMemberStats = {
-  additions: number;
-  deletions: number;
-  commits: number;
-};
+const LeaderboardMemberStatsSchema = z.object({
+  additions: z.number(),
+  deletions: z.number(),
+  commits: z.number(),
+});
 
-export type LeaderboardTypeAnalytics = {
-  members: LeaderboardTypeMember[];
-  since: string;
-  until: string;
-};
+const LeaderboardMemberSchema = z.object({
+  name: z.string(),
+  node_id: z.string(),
+  projects_names: z.array(LeaderboardProjectNameSchema),
+  avatar_url: z.string(),
+  score: z.number(),
+  stats: LeaderboardMemberStatsSchema,
+});
+
+export const LeaderboardAnalyticsSchema = z.object({
+  members: z.array(LeaderboardMemberSchema),
+  since: z.string(),
+  until: z.string(),
+});
+
+export type LeaderboardTypeAnalytics = z.infer<
+  typeof LeaderboardAnalyticsSchema
+>;
