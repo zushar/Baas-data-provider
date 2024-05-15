@@ -31,7 +31,6 @@ export class ProjectsService implements OnModuleInit {
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async handleCron() {
-    // await this.deletePastData();
     await this.saveProjects();
   }
 
