@@ -31,6 +31,7 @@ export class ProjectsService implements OnModuleInit {
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async handleCron() {
+    await this.deleteOldProjects();
     await this.saveProjects();
   }
 
@@ -81,6 +82,18 @@ export class ProjectsService implements OnModuleInit {
     } catch (error) {
       Logger.error(error);
     }
+  }
+
+  async deleteOldProjects() {
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5); // 5 days ago
+
+    await this.projectModel.deleteMany({
+      timestamp: { $lte: fiveDaysAgo },
+    });
+    await this.languageModel.deleteMany({
+      timestamp: { $lte: fiveDaysAgo },
+    });
   }
 
   private buildLanguageUniqueArray(
