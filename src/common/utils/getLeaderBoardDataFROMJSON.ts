@@ -1,4 +1,6 @@
-export default () => [
+import { LeaderboardTypeAnalytics } from '@/types/leaderboard';
+
+export default (): LeaderboardTypeAnalytics['members'] => [
   {
     name: 'hilell-elsh',
     node_id: 'MDQ6VXNlcjg0Nzc5NDgy',
