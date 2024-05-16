@@ -3,7 +3,7 @@ import {
   CoreRecordDocument,
   FilterCoreRecords,
 } from '@/common/mongoose/schemas/core-records';
-import { CoreRecordTypeName, RecordType } from '@/types/core-records';
+import { CoreRecordTypeName } from '@/types/core-records';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -58,13 +58,13 @@ export class CoreRecordsService {
   }
 
   async createRecord(
-    record: RecordType,
+    recordId: string,
     recordType: CoreRecordTypeName,
     createdBy: string,
   ) {
     try {
       const newRecord = new this.coreRecordModel({
-        record,
+        recordId,
         type: recordType,
         createdAt: new Date(),
         createdBy,
@@ -75,7 +75,7 @@ export class CoreRecordsService {
       return newRecord;
     } catch (error) {
       Logger.error('Error saving record', {
-        record,
+        recordId,
         createdBy,
         recordType,
         error,
@@ -86,7 +86,7 @@ export class CoreRecordsService {
   //update a record by id
   async updateRecord(
     id: string,
-    record: RecordType,
+    recordId: string,
     updatedBy: string,
   ): Promise<CoreRecordDocument | null> {
     try {
@@ -94,7 +94,7 @@ export class CoreRecordsService {
         .findByIdAndUpdate(
           id,
           {
-            record,
+            recordId,
             updatedAt: new Date(),
             updatedBy,
           },
@@ -103,7 +103,7 @@ export class CoreRecordsService {
         .exec();
       return updatedRecord;
     } catch (error) {
-      Logger.error('Error updating record', { id, record, updatedBy, error });
+      Logger.error('Error updating record', { id, recordId, updatedBy, error });
       return null;
     }
   }

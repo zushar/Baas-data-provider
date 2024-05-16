@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { CoreRecordsService } from './core-records.service';
 import { FilterCoreRecords } from '@/common/mongoose/schemas/core-records';
-import { CoreRecordTypeName, RecordType } from '@/types/core-records';
+import { CoreRecordTypeName } from '@/types/core-records';
 
 @Controller('core-records')
 export class CoreRecordsController {
@@ -28,15 +28,14 @@ export class CoreRecordsController {
 
   // create a new record
   async createRecord(
-    record: RecordType,
+    recordId: string,
     recordType: CoreRecordTypeName,
     createdBy: string,
   ) {
-    return this.coreRecordsService.createRecord(record, recordType, createdBy);
-  }
-
-  // update a record
-  async updateRecord(id: string, record: RecordType, updatedBy: string) {
-    return this.coreRecordsService.updateRecord(id, record, updatedBy);
+    return this.coreRecordsService.createRecord(
+      recordId,
+      recordType,
+      createdBy,
+    );
   }
 }
