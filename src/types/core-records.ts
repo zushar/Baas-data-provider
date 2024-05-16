@@ -1,5 +1,3 @@
-export type RecordType = MemberRecord | ProjectRecord | MentorRecord;
-
 export enum CoreRecordTypeName {
   Member = 'Member',
   Project = 'Project',
@@ -7,15 +5,13 @@ export enum CoreRecordTypeName {
 }
 
 export interface ICoreRecord {
-  record: RecordType;
+  recordId: string;
   type: CoreRecordTypeName;
   createdAt: Date;
   createdBy: string;
-  updatedAt: Date;
-  updatedBy: Date | null;
 }
 
-export interface MemberRecord {
+export interface IMemberRecord {
   name: string;
   discordUser: string;
   links: {
@@ -25,11 +21,11 @@ export interface MemberRecord {
   description: string;
 }
 
-export interface ProjectRecord {
+export interface IProjectRecord {
   githubLink: string;
   discordLink: string;
 }
 
-export interface MentorRecord {
-  stud: null;
+export interface IMentorRecord {
+  stud: string;
 }
