@@ -3,11 +3,13 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { RootConfig } from './config/env.validation';
 import HttpExceptionFilter from './common/filters/http-exception-filter';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   try {
     const { PORT } = app.get(RootConfig);
+    app.use(cookieParser());
 
     // apply global exception filter
     const filter = new HttpExceptionFilter();

@@ -23,6 +23,8 @@ export class RootConfig {
   GITHUB_TOKEN: string;
   @IsString()
   MONGO_URI: string;
+  @IsString()
+  JWT_SECRET: string;
 }
 
 export function validate(config: Record<string, unknown>) {

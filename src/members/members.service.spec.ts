@@ -10,7 +10,7 @@ import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import {
   TestDbModule,
   closeInMongodConnection,
-} from '../../test/mocks/module/mongo-in-memory';
+} from '@/../test/mocks/module/mongo-in-memory';
 import { type CreateMemberDto } from '../common/dto/member';
 import { GithubGqlService } from '@/github-gql/github-gql.service';
 
