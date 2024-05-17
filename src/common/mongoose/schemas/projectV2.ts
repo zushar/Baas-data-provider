@@ -4,7 +4,6 @@ import { HydratedDocument } from 'mongoose';
 // Infer the TypeScript type from the summary schema
 export type ProjectDocumentV2 = HydratedDocument<ProjectV2>;
 
-// Define the Mongoose schema and model with decorators
 @Schema()
 export class ProjectV2 {
   @Prop({ required: true })
@@ -63,7 +62,7 @@ export class ProjectV2 {
     ],
     default: [],
   })
-  errorsData: {
+  errors: {
     type: string | null;
     message: string | null;
   }[];

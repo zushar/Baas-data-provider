@@ -375,8 +375,9 @@ export default GitHubResponseSchema;
 
 // Above is the schema for the projectV2Schema.ts file. The schema is generated
 // Below is the new schema for the database
+const dateToString = z.coerce.date().or(z.string());
 
-// Define the summary schema
+// Define the summary schema using Zod
 const SummarySchema = z.object({
   timestamp: z.string(),
   repository: z.object({
@@ -402,10 +403,10 @@ const SummarySchema = z.object({
           .nullable(),
       )
       .nullable(),
-    createdAt: z.string().nullable(),
-    updatedAt: z.string().nullable(),
+    createdAt: dateToString.nullable(),
+    updatedAt: dateToString.nullable(),
   }),
-  errorsData: z
+  errors: z
     .array(
       z
         .object({
@@ -451,7 +452,7 @@ export function summarizeGitHubData(
       createdAt: item.item?.data?.repository?.createdAt ?? null,
       updatedAt: item.item?.data?.repository?.updatedAt ?? null,
     },
-    errorsData: item.item?.error?.graphQLErrors
+    errors: item.item?.error?.graphQLErrors
       ? item.item?.error?.graphQLErrors.map((error) => ({
           type: error.type ?? null,
           message: error.message ?? null,

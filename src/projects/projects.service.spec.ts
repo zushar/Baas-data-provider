@@ -12,6 +12,7 @@ import {
   TestDbModule,
   closeInMongodConnection,
 } from '@/../test/mocks/module/mongo-in-memory';
+import { ProjectSchemaV2 } from '@/common/mongoose/schemas/projectV2';
 
 const mockProject1 = makeMockProject('project1', 'AAAA', ['JavaScript']);
 const mockProject2 = makeMockProject('project2', 'BBBB', [
@@ -43,6 +44,7 @@ describe('ProjectsService', () => {
         MongooseModule.forFeature([
           { name: 'Project', schema: ProjectSchema },
           { name: 'Language', schema: LanguageSchema },
+          { name: 'ProjectV2', schema: ProjectSchemaV2 },
         ]),
         // Include any setup for in-memory MongoDB here
       ],
