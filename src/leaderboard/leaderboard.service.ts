@@ -1,5 +1,6 @@
 import { AnalyticsDto } from '@/common/dto/leaderboard';
 import getLeaderBoardDataFROMJSON from '@/common/utils/getLeaderBoardDataFROMJSON';
+import getLeaderboardDataFromGithub from '@/common/utils/getLeaderBoardDataFromGithubV2';
 import { LeaderboardTypeAnalytics } from '@/types/leaderboard';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 
@@ -15,5 +16,9 @@ export class LeaderboardService implements OnModuleInit {
       since,
       until,
     } as LeaderboardTypeAnalytics;
+  }
+
+  async getLeaderboardDataV2(): Promise<AnalyticsDto> {
+    return await getLeaderboardDataFromGithub();
   }
 }
