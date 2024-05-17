@@ -104,7 +104,7 @@ export class ProjectsService implements OnModuleInit {
         timestamp,
         item: project.item,
         error: project.error,
-        meta: { link: project.meta.link },
+        meta: { link: project.meta?.link },
       });
 
       await newProjectDocument.save();
