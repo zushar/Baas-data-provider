@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const dateToString = z.coerce.date().or(z.string());
+
 const OwnerSchema = z.object({
   id: z.string().nullable().optional(),
   login: z.string().nullable().optional(),
@@ -37,8 +39,8 @@ const RepositorySchema = z.object({
   openGraphImageUrl: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   url: z.string().nullable().optional(),
-  createdAt: z.string().nullable().optional(),
-  updatedAt: z.string().nullable().optional(),
+  createdAt: dateToString.nullable().optional(),
+  updatedAt: dateToString.nullable().optional(),
   stargazerCount: z.number().nullable().optional(),
   languages: LanguagesSchema.nullable().optional(),
   collaborators: z
@@ -375,7 +377,6 @@ export default GitHubResponseSchema;
 
 // Above is the schema for the projectV2Schema.ts file. The schema is generated
 // Below is the new schema for the database
-const dateToString = z.coerce.date().or(z.string());
 
 // Define the summary schema using Zod
 const SummarySchema = z.object({
