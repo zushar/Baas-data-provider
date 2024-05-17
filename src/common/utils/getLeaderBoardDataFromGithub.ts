@@ -129,6 +129,12 @@ async function getLeaderboardDataFromGithub() {
     score: value.score * value.projects_names.length,
   }));
 
+  const maxScore = Math.max(...arrayLeaderboard.map((m) => m.score));
+  // Normalize the score to a percentage to be used in the leaderboard
+  arrayLeaderboard.forEach((m) => {
+    m.score = (m.score / maxScore) * 100;
+  });
+
   arrayLeaderboard.sort((a, b) => b.score - a.score);
 
   return { data: arrayLeaderboard, since, until };
