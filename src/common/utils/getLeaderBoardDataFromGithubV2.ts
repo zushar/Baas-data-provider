@@ -131,35 +131,64 @@ const normalizeScores = (members: Analytics['members']) => {
 const sortLeaderboard = (members: Analytics['members']) =>
   members.sort((a, b) => b.score - a.score);
 
+// Step 6: Implementing the Builder Pattern
+class LeaderboardBuilder {
+  private leaderboard: Map<string, Analytics['members'][number]> = new Map();
+
+  async fetchAndProcessRepos(
+    repos: { owner: string; repo: string }[],
+    since: string,
+    until: string,
+  ) {
+    const results = await Promise.allSettled(
+      repos.map(({ owner, repo }) => fetchRepoData(owner, repo, since, until)),
+    );
+
+    results.forEach((result) => {
+      if (result.status === 'fulfilled') {
+        this.leaderboard = processRepoData(result.value, this.leaderboard);
+      } else {
+        console.error('Error fetching data:', result.reason);
+      }
+    });
+
+    return this;
+  }
+
+  normalizeAndSort() {
+    const arrayLeaderboard = normalizeScores(
+      Array.from(this.leaderboard.values()),
+    );
+    return sortLeaderboard(arrayLeaderboard);
+  }
+
+  build(
+    since: string,
+    until: string,
+  ): { members: Analytics['members']; since: string; until: string } {
+    const sortedLeaderboard = this.normalizeAndSort();
+    return { members: sortedLeaderboard, since, until };
+  }
+}
+
 // Step 5: Functional Programming and Final Function
 async function getLeaderboardDataFromGithub(): Promise<{
   members: Analytics['members'];
   since: string;
   until: string;
 }> {
-  const since = '2024-01-05T00:00:00Z';
-  const until = '2024-04-12T00:00:00Z';
+  // Calculate the dynamic 'since' and 'until' dates
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const until = new Date().toISOString();
 
   const repos = [
     { owner: 'maakaf', repo: 'maakaf-website' },
     { owner: 'maakaf', repo: 'Baas-data-provider' },
   ];
 
-  const leaderboard = (
-    await Promise.allSettled(
-      repos.map(({ owner, repo }) => fetchRepoData(owner, repo, since, until)),
-    )
-  ).reduce<Map<string, Analytics['members'][number]>>((acc, result) => {
-    if (result.status === 'fulfilled') {
-      return processRepoData(result.value, acc);
-    }
-    return acc;
-  }, new Map<string, Analytics['members'][number]>());
-
-  const arrayLeaderboard = normalizeScores(Array.from(leaderboard.values()));
-  const sortedLeaderboard = sortLeaderboard(arrayLeaderboard);
-
-  return { members: sortedLeaderboard, since, until };
+  const builder = new LeaderboardBuilder();
+  await builder.fetchAndProcessRepos(repos, since, until);
+  return builder.build(since, until);
 }
 
 export default getLeaderboardDataFromGithub;
