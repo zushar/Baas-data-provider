@@ -49,8 +49,8 @@ export class ProjectV2 {
           avatarUrl: string | null;
         }[]
       | null;
-    createdAt: string | null;
-    updatedAt: string | null;
+    createdAt: string | null | Date;
+    updatedAt: string | null | Date;
   };
 
   @Prop({
