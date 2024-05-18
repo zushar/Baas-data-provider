@@ -260,4 +260,8 @@ export class ProjectsService implements OnModuleInit {
 
     return languages;
   }
+
+  async getAllProjectsV2() {
+    return await this.projectModelV2.find().exec();
+  }
 }

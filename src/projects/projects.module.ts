@@ -26,5 +26,6 @@ import { ProjectSchemaV2 } from '@/common/mongoose/schemas/projectV2';
       },
     ]),
   ],
+  exports: [ProjectsService],
 })
 export class ProjectsModule {}

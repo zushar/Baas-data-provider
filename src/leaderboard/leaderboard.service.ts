@@ -1,11 +1,14 @@
 import { AnalyticsDto } from '@/common/dto/leaderboard';
 import getLeaderBoardDataFROMJSON from '@/common/utils/getLeaderBoardDataFROMJSON';
 import getLeaderboardDataFromGithub from '@/common/utils/getLeaderBoardDataFromGithubV2';
+import { ProjectsService } from '@/projects/projects.service';
 import { LeaderboardTypeAnalytics } from '@/types/leaderboard';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 
 @Injectable()
 export class LeaderboardService implements OnModuleInit {
+  constructor(private projectsService: ProjectsService) {}
+
   onModuleInit() {}
 
   async getLeaderboardData(): Promise<AnalyticsDto> {
@@ -19,6 +22,13 @@ export class LeaderboardService implements OnModuleInit {
   }
 
   async getLeaderboardDataV2(): Promise<AnalyticsDto> {
-    return await getLeaderboardDataFromGithub();
+    const allProjects = (await this.projectsService.getAllProjectsV2())
+      .map((p) => ({
+        owner: p.repository.owner?.login ?? '',
+        repo: p.repository.name ?? '',
+      }))
+      .filter((p) => p.owner && p.repo);
+
+    return await getLeaderboardDataFromGithub(allProjects);
   }
 }

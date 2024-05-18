@@ -171,8 +171,13 @@ class LeaderboardBuilder {
   }
 }
 
+interface Repo {
+  owner: string;
+  repo: string;
+}
+
 // Step 5: Functional Programming and Final Function
-async function getLeaderboardDataFromGithub(): Promise<{
+async function getLeaderboardDataFromGithub(repos: Repo[]): Promise<{
   members: Analytics['members'];
   since: string;
   until: string;
@@ -180,11 +185,6 @@ async function getLeaderboardDataFromGithub(): Promise<{
   // Calculate the dynamic 'since' and 'until' dates
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const until = new Date().toISOString();
-
-  const repos = [
-    { owner: 'maakaf', repo: 'maakaf-website' },
-    { owner: 'maakaf', repo: 'Baas-data-provider' },
-  ];
 
   const builder = new LeaderboardBuilder();
   await builder.fetchAndProcessRepos(repos, since, until);

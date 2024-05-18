@@ -7,6 +7,7 @@ import {
   Leaderboard,
   LeaderboardSchema,
 } from '@/common/mongoose/schemas/leaderboard';
+import { ProjectsModule } from '@/projects/projects.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import {
       { name: Leaderboard.name, schema: LeaderboardSchema },
     ]),
     GithubGqlModule,
+    ProjectsModule,
   ],
   controllers: [LeaderboardController], // Register the LeaderboardController
   providers: [LeaderboardService],
