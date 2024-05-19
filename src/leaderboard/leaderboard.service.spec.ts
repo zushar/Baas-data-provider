@@ -6,6 +6,7 @@ import {
   LeaderboardSchema,
 } from '@/common/mongoose/schemas/leaderboard';
 import { LeaderboardAnalyticsSchema } from '@/types/leaderboard';
+import { TestDbModule } from '@/../test/mocks/module/mongo-in-memory';
 
 describe('LeaderboardService', () => {
   let service: LeaderboardService;
@@ -13,7 +14,8 @@ describe('LeaderboardService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        MongooseModule.forRoot('mongodb://127.0.0.1:27017/test'),
+        TestDbModule,
+        // MongooseModule.forRoot('mongodb://127.0.0.1:27017/test'),
         MongooseModule.forFeature([
           { name: Leaderboard.name, schema: LeaderboardSchema },
         ]),

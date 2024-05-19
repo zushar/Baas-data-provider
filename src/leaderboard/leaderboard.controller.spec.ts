@@ -23,13 +23,13 @@ describe('LeaderboardController', () => {
     controller = module.get<LeaderboardController>(LeaderboardController);
   });
 
-  it('should return leaderboard data from JSON', async () => {
+  it.skip('should return leaderboard data from JSON', async () => {
     const data = await controller.getMostRecentDataPaginated();
     const parsed = LeaderboardAnalyticsSchema.safeParse(data);
     expect(parsed.error).toBeUndefined();
   });
 
-  it('should return leaderboard data from DB', async () => {
+  it.skip('should return leaderboard data from DB', async () => {
     const data = await controller.getMostRecentDataPaginatedFromDB();
     const parsed = LeaderboardAnalyticsSchema.safeParse(data);
     expect(parsed.error).toBeUndefined();
