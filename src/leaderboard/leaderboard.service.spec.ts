@@ -24,7 +24,7 @@ describe('GithubGqlService', () => {
 
   it('Parse Leaderboard data. got the worng data', async () => {
     const data = await service.getLeaderboardDataV2();
-    const parsedData = LeaderboardAnalyticsSchema.safeParse(data);
+    const parsedData = LeaderboardAnalyticsSchema.array().safeParse(data);
     expect(parsedData.error).toBe(undefined);
   });
 });
