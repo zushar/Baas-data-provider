@@ -26,7 +26,7 @@ const gitHubContributorStatsSchema = z.array(
 
 type GithubContributorStats = z.infer<typeof gitHubContributorStatsSchema>;
 
-type Analytics = {
+export type Analytics = {
   members: {
     name: string;
     node_id: string;
