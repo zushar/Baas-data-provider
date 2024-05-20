@@ -27,7 +27,8 @@ export class LeaderboardService implements OnModuleInit {
         owner: p.repository.owner?.login ?? '',
         repo: p.repository.name ?? '',
       }))
-      .filter((p) => p.owner && p.repo);
+      .filter((p) => p.owner && p.repo)
+      .slice(0, 3);
 
     return await getLeaderboardDataFromGithub(allProjects);
   }

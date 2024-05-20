@@ -38,10 +38,11 @@ export class ProjectsService implements OnModuleInit {
     await this.handleCron();
   }
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  @Cron(CronExpression.EVERY_DAY_AT_10PM)
   async handleCron() {
     await this.deleteOldProjects();
     await this.saveProjects();
+    await this.deleteAllProjectsV2();
     await this.saveProjectsV2();
   }
 
@@ -124,7 +125,7 @@ export class ProjectsService implements OnModuleInit {
 
   async deleteOldProjects() {
     const fiveDaysAgo = new Date();
-    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5); // 5 days ago
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 1); // 1 days ago
 
     await this.projectModel.deleteMany({
       timestamp: { $lte: fiveDaysAgo },
@@ -263,5 +264,8 @@ export class ProjectsService implements OnModuleInit {
 
   async getAllProjectsV2() {
     return await this.projectModelV2.find().exec();
+  }
+  private async deleteAllProjectsV2() {
+    return await this.projectModelV2.deleteMany({}).exec();
   }
 }

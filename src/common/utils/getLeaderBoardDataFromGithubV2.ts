@@ -1,3 +1,4 @@
+import * as pThrottle from 'p-throttle';
 import { z } from 'zod';
 
 // Step 1: Schema and Types Optimization
@@ -71,9 +72,13 @@ const fetchRepoData = async (
   until: string,
 ) => {
   const url = `https://api.github.com/repos/${owner}/${repo}/stats/contributors?order=desc&until=${until}&since=${since}`;
+  console.log(`Fetching data for ${owner}/${repo}`, url);
   const response = await fetch(url);
   if (!response.ok)
-    throw new Error(`Failed to fetch data for ${owner}/${repo}`);
+    throw new Error(
+      // {"message":"API rate limit exceeded for 188.64.206.124. (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)","documentation_url":"https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"}
+      `Failed to fetch data for ${owner}/${repo}, ${response.status}`,
+    );
   const json = await response.json();
   return { owner, repo, json };
 };
@@ -140,8 +145,24 @@ class LeaderboardBuilder {
     since: string,
     until: string,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const throttle4 = (pThrottle as any)({
+      limit: 10,
+      interval: 1000 * 60, // 10 requests per minute
+      onDelay: () => {
+        console.log('Reached interval limit, call is delayed');
+      },
+    });
+
+    const throttledFetchRepoData = throttle4(
+      (owner: string, repo: string, since: string, until: string) =>
+        fetchRepoData(owner, repo, since, until),
+    );
+
     const results = await Promise.allSettled(
-      repos.map(({ owner, repo }) => fetchRepoData(owner, repo, since, until)),
+      repos.map(({ owner, repo }) =>
+        throttledFetchRepoData(owner, repo, since, until),
+      ),
     );
 
     results.forEach((result) => {
