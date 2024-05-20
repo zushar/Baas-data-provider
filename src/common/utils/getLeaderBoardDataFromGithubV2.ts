@@ -1,7 +1,7 @@
 import * as pThrottle from 'p-throttle';
 import { z } from 'zod';
 
-// Step 1: Schema and Types Optimization
+// Step 1: Schema and Types
 const githubWeekStatesSchema = z.object({
   w: z.number(),
   a: z.number(),
@@ -72,13 +72,14 @@ const fetchRepoData = async (
   until: string,
 ) => {
   const url = `https://api.github.com/repos/${owner}/${repo}/stats/contributors?order=desc&until=${until}&since=${since}`;
+  // This log is for debugging purposes only
   console.log(`Fetching data for ${owner}/${repo}`, url);
   const response = await fetch(url);
-  if (!response.ok)
+  if (!response.ok) {
     throw new Error(
-      // {"message":"API rate limit exceeded for 188.64.206.124. (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)","documentation_url":"https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"}
       `Failed to fetch data for ${owner}/${repo}, ${response.status}`,
     );
+  }
   const json = await response.json();
   return { owner, repo, json };
 };
@@ -124,14 +125,12 @@ const processRepoData = (
   return acc;
 };
 
-type RepoData = ReturnType<typeof fetchRepoData>;
-
 // Step 4: Optimization and Leaderboard Construction
 const normalizeScores = (members: Analytics['members']) => {
   const maxScore = Math.max(...members.map((m) => m.score));
   return members.map((m) => ({
     ...m,
-    score: (m.score / maxScore) * 100,
+    score: (m.score / maxScore) * 100, // Normalize the score to a percentage so it's easier to compare
   }));
 };
 
@@ -162,7 +161,7 @@ const fetchAndThrottle = async (
           repo,
           since,
           until,
-        ) as unknown as RepoData,
+        ) as unknown as ReturnType<typeof fetchRepoData>,
     ),
   );
 
@@ -172,7 +171,7 @@ const fetchAndThrottle = async (
 const sortLeaderboard = (members: Analytics['members']) =>
   members.sort((a, b) => b.score - a.score);
 
-// Step 6: Implementing the Builder Pattern
+// Step 5: Implementing the Builder Pattern
 class LeaderboardBuilder {
   private leaderboard: Map<string, Analytics['members'][number]> = new Map();
 
@@ -210,12 +209,12 @@ class LeaderboardBuilder {
   }
 }
 
+// Step 6: Functional Programming and Final Function
 interface Repo {
   owner: string;
   repo: string;
 }
 
-// Step 5: Functional Programming and Final Function
 async function getLeaderboardDataFromGithub(repos: Repo[]): Promise<{
   members: Analytics['members'];
   since: string;
