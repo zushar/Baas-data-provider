@@ -124,6 +124,8 @@ const processRepoData = (
   return acc;
 };
 
+type RepoData = ReturnType<typeof fetchRepoData>;
+
 // Step 4: Optimization and Leaderboard Construction
 const normalizeScores = (members: Analytics['members']) => {
   const maxScore = Math.max(...members.map((m) => m.score));
@@ -160,8 +162,14 @@ class LeaderboardBuilder {
     );
 
     const results = await Promise.allSettled(
-      repos.map(({ owner, repo }) =>
-        throttledFetchRepoData(owner, repo, since, until),
+      repos.map(
+        ({ owner, repo }) =>
+          throttledFetchRepoData(
+            owner,
+            repo,
+            since,
+            until,
+          ) as unknown as RepoData,
       ),
     );
 
