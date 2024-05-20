@@ -135,6 +135,40 @@ const normalizeScores = (members: Analytics['members']) => {
   }));
 };
 
+const fetchAndThrottle = async (
+  repos: { owner: string; repo: string }[],
+  since: string,
+  until: string,
+) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const throttle4 = (pThrottle as any)({
+    limit: 10,
+    interval: 1000 * 60, // 10 requests per minute
+    onDelay: () => {
+      console.log('Reached interval limit, call is delayed');
+    },
+  });
+
+  const throttledFetchRepoData = throttle4(
+    (owner: string, repo: string, since: string, until: string) =>
+      fetchRepoData(owner, repo, since, until),
+  );
+
+  const results = await Promise.allSettled(
+    repos.map(
+      ({ owner, repo }) =>
+        throttledFetchRepoData(
+          owner,
+          repo,
+          since,
+          until,
+        ) as unknown as RepoData,
+    ),
+  );
+
+  return results;
+};
+
 const sortLeaderboard = (members: Analytics['members']) =>
   members.sort((a, b) => b.score - a.score);
 
@@ -142,36 +176,12 @@ const sortLeaderboard = (members: Analytics['members']) =>
 class LeaderboardBuilder {
   private leaderboard: Map<string, Analytics['members'][number]> = new Map();
 
-  async fetchAndProcessRepos(
+  async processRepos(
     repos: { owner: string; repo: string }[],
     since: string,
     until: string,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const throttle4 = (pThrottle as any)({
-      limit: 10,
-      interval: 1000 * 60, // 10 requests per minute
-      onDelay: () => {
-        console.log('Reached interval limit, call is delayed');
-      },
-    });
-
-    const throttledFetchRepoData = throttle4(
-      (owner: string, repo: string, since: string, until: string) =>
-        fetchRepoData(owner, repo, since, until),
-    );
-
-    const results = await Promise.allSettled(
-      repos.map(
-        ({ owner, repo }) =>
-          throttledFetchRepoData(
-            owner,
-            repo,
-            since,
-            until,
-          ) as unknown as RepoData,
-      ),
-    );
+    const results = await fetchAndThrottle(repos, since, until);
 
     results.forEach((result) => {
       if (result.status === 'fulfilled') {
@@ -216,7 +226,7 @@ async function getLeaderboardDataFromGithub(repos: Repo[]): Promise<{
   const until = new Date().toISOString();
 
   const builder = new LeaderboardBuilder();
-  await builder.fetchAndProcessRepos(repos, since, until);
+  await builder.processRepos(repos, since, until);
   return builder.build(since, until);
 }
 
