@@ -2,7 +2,7 @@ import { AnalyticsDto } from '@/common/dto/leaderboard';
 import getLeaderBoardDataFROMJSON from '@/common/utils/getLeaderBoardDataFROMJSON';
 import { LeaderboardTypeAnalytics } from '@/types/leaderboard';
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -14,15 +14,16 @@ import {
 export class LeaderboardService implements OnModuleInit {
   constructor(
     @InjectModel(Leaderboard.name)
-    private readonly memberModel: Model<LeaderboardDocument>,
+    private readonly ContributorModel: Model<LeaderboardDocument>,
   ) {}
   async onModuleInit() {
+    await this.deleteAllMembers();
     await this.handleCron();
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron('0 8 * * 0') // Cron expression for 8:00 AM every Sunday
   async handleCron() {
-    console.log('Running fetch and store members cron job');
+    console.log('Running fetch and store Contributors cron job');
     await this.fetchAndStoreMembers();
   }
 
@@ -31,15 +32,16 @@ export class LeaderboardService implements OnModuleInit {
 
     await Promise.all(
       membersData.map((memberData) => {
-        return this.saveFetchedFromGithubMemberToDb(memberData, timestamp);
+        return this.saveFetchedFromGithubContributorToDb(memberData, timestamp);
       }),
     );
   }
 
-  private async saveFetchedFromGithubMemberToDb(memberData, timestamp) {
+  private async saveFetchedFromGithubContributorToDb(memberData, timestamp) {
     try {
       //createOrUpdate member
-      await this.memberModel.findOneAndUpdate(
+      //to do - check timestamp in schema
+      await this.ContributorModel.findOneAndUpdate(
         {
           node_id: memberData.node_id,
         },
@@ -69,7 +71,7 @@ export class LeaderboardService implements OnModuleInit {
     const since = '2024-01-05T00:00:00Z';
     const until = '2024-04-12T00:00:00Z';
     return {
-      members: await this.memberModel.find({
+      members: await this.ContributorModel.find({
         timestamp: { $gte: new Date(since), $lte: new Date(until) },
       }),
       since,
@@ -85,5 +87,9 @@ export class LeaderboardService implements OnModuleInit {
       since,
       until,
     } as LeaderboardTypeAnalytics;
+  }
+
+  private async deleteAllMembers() {
+    await this.ContributorModel.deleteMany({});
   }
 }
