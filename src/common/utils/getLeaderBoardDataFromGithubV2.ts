@@ -42,6 +42,7 @@ type Analytics = {
   }[];
   since: string;
   until: string;
+  stat: 'allTimes' | 'lastMonth' | 'lastWeek';
 };
 
 type GithubContributorStats = z.infer<typeof gitHubContributorStatsSchema>;
@@ -65,13 +66,8 @@ const calculateTotals = (weeks: GithubContributorStats[number]['weeks']) =>
     { score: 0, stats: { additions: 0, deletions: 0, commits: 0 } },
   );
 
-const fetchRepoData = async (
-  owner: string,
-  repo: string,
-  since: string,
-  until: string,
-) => {
-  const url = `https://api.github.com/repos/${owner}/${repo}/stats/contributors?order=desc&until=${until}&since=${since}`;
+const fetchRepoData = async (owner: string, repo: string) => {
+  const url = `https://api.github.com/repos/${owner}/${repo}/stats/contributors`;
   // This log is for debugging purposes only
   console.log(`Fetching data for ${owner}/${repo}`, url);
   const response = await fetch(url);
@@ -134,11 +130,7 @@ const normalizeScores = (members: Analytics['members']) => {
   }));
 };
 
-const fetchAndThrottle = async (
-  repos: { owner: string; repo: string }[],
-  since: string,
-  until: string,
-) => {
+const fetchAndThrottle = async (repos: { owner: string; repo: string }[]) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const throttle4 = (pThrottle as any)({
     limit: 10,
@@ -148,20 +140,16 @@ const fetchAndThrottle = async (
     },
   });
 
-  const throttledFetchRepoData = throttle4(
-    (owner: string, repo: string, since: string, until: string) =>
-      fetchRepoData(owner, repo, since, until),
+  const throttledFetchRepoData = throttle4((owner: string, repo: string) =>
+    fetchRepoData(owner, repo),
   );
 
   const results = await Promise.allSettled(
     repos.map(
       ({ owner, repo }) =>
-        throttledFetchRepoData(
-          owner,
-          repo,
-          since,
-          until,
-        ) as unknown as ReturnType<typeof fetchRepoData>,
+        throttledFetchRepoData(owner, repo) as unknown as ReturnType<
+          typeof fetchRepoData
+        >,
     ),
   );
 
@@ -175,12 +163,8 @@ const sortLeaderboard = (members: Analytics['members']) =>
 class LeaderboardBuilder {
   private leaderboard: Map<string, Analytics['members'][number]> = new Map();
 
-  async processRepos(
-    repos: { owner: string; repo: string }[],
-    since: string,
-    until: string,
-  ) {
-    const results = await fetchAndThrottle(repos, since, until);
+  async processRepos(repos: { owner: string; repo: string }[]) {
+    const results = await fetchAndThrottle(repos);
 
     results.forEach((result) => {
       if (result.status === 'fulfilled') {
@@ -200,12 +184,13 @@ class LeaderboardBuilder {
     return sortLeaderboard(arrayLeaderboard);
   }
 
-  build(
-    since: string,
-    until: string,
-  ): { members: Analytics['members']; since: string; until: string } {
-    const sortedLeaderboard = this.normalizeAndSort();
-    return { members: sortedLeaderboard, since, until };
+  build(): Analytics[] {
+    const sortedLeaderboard = this.normalizeAndSort(); // all times leaderboard
+    return [
+      { members: sortedLeaderboard, since: '', until: '', stat: 'allTimes' },
+      { members: [], since: '', until: '', stat: 'lastMonth' },
+      { members: [], since: '', until: '', stat: 'lastWeek' },
+    ];
   }
 }
 
@@ -220,13 +205,9 @@ async function getLeaderboardDataFromGithub(repos: Repo[]): Promise<{
   since: string;
   until: string;
 }> {
-  // Calculate the dynamic 'since' and 'until' dates
-  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const until = new Date().toISOString();
-
   const builder = new LeaderboardBuilder();
-  await builder.processRepos(repos, since, until);
-  return builder.build(since, until);
+  await builder.processRepos(repos);
+  return builder.build();
 }
 
 export default getLeaderboardDataFromGithub;
