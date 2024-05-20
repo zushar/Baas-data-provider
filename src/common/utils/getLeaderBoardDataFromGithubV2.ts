@@ -24,6 +24,8 @@ const gitHubContributorStatsSchema = z.array(
   }),
 );
 
+type GithubContributorStats = z.infer<typeof gitHubContributorStatsSchema>;
+
 type Analytics = {
   members: {
     name: string;
@@ -44,8 +46,6 @@ type Analytics = {
   until: string;
   stat: 'allTimes' | 'lastMonth' | 'lastWeek';
 };
-
-type GithubContributorStats = z.infer<typeof gitHubContributorStatsSchema>;
 
 // Step 2: Helper Functions
 const calculateTotals = (weeks: GithubContributorStats[number]['weeks']) =>
@@ -81,16 +81,87 @@ const fetchRepoData = async (owner: string, repo: string) => {
 };
 
 // Step 3: Error Handling and Data Processing
-const processRepoData = (
-  data: { owner: string; repo: string; json: unknown },
+const processRepoDataAllTimes = (
+  data: { owner: string; repo: string; json: GithubContributorStats },
   acc: Map<string, Analytics['members'][number]>,
 ): Map<string, Analytics['members'][number]> => {
-  const parsedData = gitHubContributorStatsSchema.safeParse(data.json);
-  if (!parsedData.success) return acc;
-
-  parsedData.data.forEach((contributor) => {
+  data.json.forEach((contributor) => {
     const { author, weeks } = contributor;
     const { score, stats } = calculateTotals(weeks);
+
+    const member = {
+      name: author.login,
+      node_id: author.node_id,
+      projects_names: [{ url: `${data.owner}/${data.repo}`, name: data.repo }],
+      avatar_url: author.avatar_url,
+      score,
+      stats,
+    };
+
+    if (!acc.has(member.node_id)) {
+      acc.set(member.node_id, member);
+    } else {
+      const existing = acc.get(member.node_id)!;
+      acc.set(member.node_id, {
+        ...existing,
+        score: existing.score + member.score,
+        stats: {
+          additions: existing.stats.additions + member.stats.additions,
+          deletions: existing.stats.deletions + member.stats.deletions,
+          commits: existing.stats.commits + member.stats.commits,
+        },
+        projects_names: [...existing.projects_names, ...member.projects_names],
+      });
+    }
+  });
+
+  return acc;
+};
+
+const processRepoDataWeekly = (
+  data: { owner: string; repo: string; json: GithubContributorStats },
+  acc: Map<string, Analytics['members'][number]>,
+): Map<string, Analytics['members'][number]> => {
+  data.json.forEach((contributor) => {
+    const { author, weeks } = contributor;
+    const { score, stats } = calculateTotals(weeks.slice(-1));
+
+    const member = {
+      name: author.login,
+      node_id: author.node_id,
+      projects_names: [{ url: `${data.owner}/${data.repo}`, name: data.repo }],
+      avatar_url: author.avatar_url,
+      score,
+      stats,
+    };
+
+    if (!acc.has(member.node_id)) {
+      acc.set(member.node_id, member);
+    } else {
+      const existing = acc.get(member.node_id)!;
+      acc.set(member.node_id, {
+        ...existing,
+        score: existing.score + member.score,
+        stats: {
+          additions: existing.stats.additions + member.stats.additions,
+          deletions: existing.stats.deletions + member.stats.deletions,
+          commits: existing.stats.commits + member.stats.commits,
+        },
+        projects_names: [...existing.projects_names, ...member.projects_names],
+      });
+    }
+  });
+
+  return acc;
+};
+
+const processRepoDataMonthly = (
+  data: { owner: string; repo: string; json: GithubContributorStats },
+  acc: Map<string, Analytics['members'][number]>,
+): Map<string, Analytics['members'][number]> => {
+  data.json.forEach((contributor) => {
+    const { author, weeks } = contributor;
+    const { score, stats } = calculateTotals(weeks.slice(-4));
 
     const member = {
       name: author.login,
@@ -162,13 +233,81 @@ const sortLeaderboard = (members: Analytics['members']) =>
 // Step 5: Implementing the Builder Pattern
 class LeaderboardBuilder {
   private leaderboard: Map<string, Analytics['members'][number]> = new Map();
+  private leaderboardWeekly: Map<string, Analytics['members'][number]> =
+    new Map();
+  private leaderboardMonthly: Map<string, Analytics['members'][number]> =
+    new Map();
+  private sinceAllTimes = [] as number[];
+  private untilAllTimes = [] as number[];
+  private sinceMonthly = [] as number[];
+  private untilMonthly = [] as number[];
+  private sinceWeekly = [] as number[];
+  private untilWeekly = [] as number[];
 
   async processRepos(repos: { owner: string; repo: string }[]) {
     const results = await fetchAndThrottle(repos);
 
     results.forEach((result) => {
       if (result.status === 'fulfilled') {
-        this.leaderboard = processRepoData(result.value, this.leaderboard);
+        const parsedData = gitHubContributorStatsSchema.safeParse(
+          result.value.json,
+        );
+        if (!parsedData.success) return;
+        const value = {
+          owner: result.value.owner,
+          repo: result.value.repo,
+          json: parsedData.data,
+        };
+
+        this.leaderboard = processRepoDataAllTimes(value, this.leaderboard);
+        this.leaderboardWeekly = processRepoDataWeekly(
+          value,
+          this.leaderboardWeekly,
+        );
+        this.leaderboardMonthly = processRepoDataMonthly(
+          value,
+          this.leaderboardMonthly,
+        );
+
+        // Ensure all contributors have at least one week
+        const validContributors = value.json.filter((c) => c.weeks.length > 0);
+
+        // Step 2: Update sinceAllTimes and untilAllTimes
+        if (validContributors.length > 0) {
+          this.sinceAllTimes = this.sinceAllTimes.concat(
+            validContributors.map((c) => Math.min(...c.weeks.map((w) => w.w))),
+          );
+          this.untilAllTimes = this.untilAllTimes.concat(
+            validContributors.map((c) => Math.max(...c.weeks.map((w) => w.w))),
+          );
+        }
+
+        // Ensure all contributors have at least four weeks for monthly calculations
+        const validMonthlyContributors = value.json.filter(
+          (c) => c.weeks.length >= 4,
+        );
+
+        if (validMonthlyContributors.length > 0) {
+          this.sinceMonthly = this.sinceMonthly.concat(
+            validMonthlyContributors.map((c) =>
+              Math.min(...c.weeks.slice(-4).map((w) => w.w)),
+            ),
+          );
+          this.untilMonthly = this.untilMonthly.concat(
+            validMonthlyContributors.map((c) =>
+              Math.max(...c.weeks.slice(-4).map((w) => w.w)),
+            ),
+          );
+        }
+
+        // Ensure all contributors have at least one week for weekly calculations
+        if (validContributors.length > 0) {
+          this.sinceWeekly = this.sinceWeekly.concat(
+            validContributors.map((c) =>
+              Math.min(...c.weeks.slice(-1).map((w) => w.w)),
+            ),
+          );
+        }
       } else {
         console.error('Error fetching data:', result.reason);
       }
@@ -181,15 +320,37 @@ class LeaderboardBuilder {
     const arrayLeaderboard = normalizeScores(
       Array.from(this.leaderboard.values()),
     );
-    return sortLeaderboard(arrayLeaderboard);
+    const arrayLeaderboardWeekly = normalizeScores(
+      Array.from(this.leaderboardWeekly.values()),
+    );
+    const arrayLeaderboardMonthly = normalizeScores(
+      Array.from(this.leaderboardMonthly.values()),
+    );
+    return [
+      sortLeaderboard(arrayLeaderboard),
+      sortLeaderboard(arrayLeaderboardWeekly),
+      sortLeaderboard(arrayLeaderboardMonthly),
+    ];
   }
 
   build(): Analytics[] {
-    const sortedLeaderboard = this.normalizeAndSort(); // all times leaderboard
+    const [sortedLeaderboard, arrayLeaderboardWeekly, arrayLeaderboardMonthly] =
+      this.normalizeAndSort(); // all times leaderboard
+
     return [
       { members: sortedLeaderboard, since: '', until: '', stat: 'allTimes' },
-      { members: [], since: '', until: '', stat: 'lastMonth' },
-      { members: [], since: '', until: '', stat: 'lastWeek' },
+      {
+        members: arrayLeaderboardMonthly,
+        since: '',
+        until: '',
+        stat: 'lastMonth',
+      },
+      {
+        members: arrayLeaderboardWeekly,
+        since: '',
+        until: '',
+        stat: 'lastWeek',
+      },
     ];
   }
 }
