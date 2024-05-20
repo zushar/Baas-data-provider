@@ -21,7 +21,7 @@ export class LeaderboardService implements OnModuleInit {
     } as LeaderboardTypeAnalytics;
   }
 
-  async getLeaderboardDataV2(): Promise<AnalyticsDto> {
+  async getLeaderboardDataV2(): Promise<AnalyticsDto[]> {
     const allProjects = (await this.projectsService.getAllProjectsV2())
       .map((p) => ({
         owner: p.repository.owner?.login ?? '',

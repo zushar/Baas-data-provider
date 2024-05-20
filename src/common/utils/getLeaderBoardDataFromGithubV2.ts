@@ -133,8 +133,8 @@ const normalizeScores = (members: Analytics['members']) => {
 const fetchAndThrottle = async (repos: { owner: string; repo: string }[]) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const throttle4 = (pThrottle as any)({
-    limit: 10,
-    interval: 1000 * 60, // 10 requests per minute
+    limit: 60,
+    interval: 1000 * 60 * 60, // 10 requests per hour
     onDelay: () => {
       console.log('Reached interval limit, call is delayed');
     },
@@ -200,11 +200,9 @@ interface Repo {
   repo: string;
 }
 
-async function getLeaderboardDataFromGithub(repos: Repo[]): Promise<{
-  members: Analytics['members'];
-  since: string;
-  until: string;
-}> {
+async function getLeaderboardDataFromGithub(
+  repos: Repo[],
+): Promise<Analytics[]> {
   const builder = new LeaderboardBuilder();
   await builder.processRepos(repos);
   return builder.build();
