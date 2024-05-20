@@ -48,8 +48,8 @@ export class AnalyticsDto {
   members: MemberDto[];
 
   @IsString()
-  since: string;
+  since: number;
 
   @IsString()
-  until: string;
+  until: number;
 }

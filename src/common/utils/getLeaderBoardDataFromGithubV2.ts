@@ -42,8 +42,8 @@ type Analytics = {
       commits: number;
     };
   }[];
-  since: string;
-  until: string;
+  since: number;
+  until: number;
   stat: 'allTimes' | 'lastMonth' | 'lastWeek';
 };
 
@@ -337,18 +337,25 @@ class LeaderboardBuilder {
     const [sortedLeaderboard, arrayLeaderboardWeekly, arrayLeaderboardMonthly] =
       this.normalizeAndSort(); // all times leaderboard
 
+    const since = Math.min(...this.sinceAllTimes) * 1000;
+    const until = Math.max(...this.untilAllTimes) * 1000;
+    const sinceMonthly = Math.min(...this.sinceMonthly) * 1000;
+    const untilMonthly = Math.max(...this.untilMonthly) * 1000;
+    const sinceWeekly = Math.min(...this.sinceWeekly) * 1000;
+    const untilWeekly = Math.max(...this.untilWeekly) * 1000;
+
     return [
-      { members: sortedLeaderboard, since: '', until: '', stat: 'allTimes' },
+      { members: sortedLeaderboard, since, until, stat: 'allTimes' },
       {
         members: arrayLeaderboardMonthly,
-        since: '',
-        until: '',
+        since: sinceMonthly,
+        until: untilMonthly,
         stat: 'lastMonth',
       },
       {
         members: arrayLeaderboardWeekly,
-        since: '',
-        until: '',
+        since: sinceWeekly,
+        until: untilWeekly,
         stat: 'lastWeek',
       },
     ];
