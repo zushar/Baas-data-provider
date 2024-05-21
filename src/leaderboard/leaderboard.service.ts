@@ -20,12 +20,13 @@ export class LeaderboardService implements OnModuleInit {
     private projectsService: ProjectsService,
   ) {}
   async onModuleInit() {
-    await this.deleteAllMembers();
     await this.handleCron();
   }
 
   @Cron('0 8 * * 0') // Cron expression for 8:00 AM every Sunday
   async handleCron() {
+    console.log('Running delete all members cron job');
+    await this.deleteAllMembers();
     console.log('Running fetch and store Contributors cron job');
     await this.fetchAndStoreMembers();
   }
@@ -73,6 +74,8 @@ export class LeaderboardService implements OnModuleInit {
   async getLeaderboardDataFromDB(): Promise<AnalyticsDto> {
     const since = 0;
     const until = 0;
+    // TODO: Implement this method as find all members from the database.
+    // Reason: We save only the data we need in the database, so no need to filter the data.
     return {
       members: await this.LeaderboardModel.find({
         timestamp: { $gte: new Date(since), $lte: new Date(until) },
