@@ -237,12 +237,10 @@ class LeaderboardBuilder {
     new Map();
   private leaderboardMonthly: Map<string, Analytics['members'][number]> =
     new Map();
-  private sinceAllTimes = [] as number[];
-  private untilAllTimes = [] as number[];
-  private sinceMonthly = [] as number[];
-  private untilMonthly = [] as number[];
-  private sinceWeekly = [] as number[];
-  private untilWeekly = [] as number[];
+
+  private allTimes = { since: 0, until: 0 };
+  private monthly = { since: 0, until: 0 };
+  private weekly = { since: 0, until: 0 };
 
   async processRepos(repos: { owner: string; repo: string }[]) {
     const results = await fetchAndThrottle(repos);
@@ -258,7 +256,6 @@ class LeaderboardBuilder {
           repo: result.value.repo,
           json: parsedData.data,
         };
-
         this.leaderboard = processRepoDataAllTimes(value, this.leaderboard);
         this.leaderboardWeekly = processRepoDataWeekly(
           value,
@@ -269,45 +266,15 @@ class LeaderboardBuilder {
           this.leaderboardMonthly,
         );
 
-        // Ensure all contributors have at least one week
-        const validContributors = value.json.filter((c) => c.weeks.length > 0);
-
-        // Step 2: Update sinceAllTimes and untilAllTimes
-        if (validContributors.length > 0) {
-          this.sinceAllTimes = this.sinceAllTimes.concat(
-            validContributors.map((c) => Math.min(...c.weeks.map((w) => w.w))),
-          );
-          this.untilAllTimes = this.untilAllTimes.concat(
-            validContributors.map((c) => Math.max(...c.weeks.map((w) => w.w))),
-          );
-        }
-
-        // Ensure all contributors have at least four weeks for monthly calculations
-        const validMonthlyContributors = value.json.filter(
-          (c) => c.weeks.length >= 4,
-        );
-
-        if (validMonthlyContributors.length > 0) {
-          this.sinceMonthly = this.sinceMonthly.concat(
-            validMonthlyContributors.map((c) =>
-              Math.min(...c.weeks.slice(-4).map((w) => w.w)),
-            ),
-          );
-          this.untilMonthly = this.untilMonthly.concat(
-            validMonthlyContributors.map((c) =>
-              Math.max(...c.weeks.slice(-4).map((w) => w.w)),
-            ),
-          );
-        }
-
-        // Ensure all contributors have at least one week for weekly calculations
-        if (validContributors.length > 0) {
-          this.sinceWeekly = this.sinceWeekly.concat(
-            validContributors.map((c) =>
-              Math.min(...c.weeks.slice(-1).map((w) => w.w)),
-            ),
-          );
-        }
+        const times = parsedData.data.flatMap((d) => d.weeks.map((w) => w.w));
+        if (times.length === 0) return;
+        times.sort((a, b) => b - a); // sort in descending order to get the most recent date first
+        this.allTimes.since = times.at(-1)!;
+        this.allTimes.until = times.at(0)!;
+        this.monthly.since = times.at(4)!;
+        this.monthly.until = times.at(0)!;
+        this.weekly.since = times.at(1)!;
+        this.weekly.until = times.at(0)!;
       } else {
         console.error('Error fetching data:', result.reason);
       }
@@ -337,28 +304,33 @@ class LeaderboardBuilder {
     const [sortedLeaderboard, arrayLeaderboardWeekly, arrayLeaderboardMonthly] =
       this.normalizeAndSort(); // all times leaderboard
 
-    const since = Math.min(...this.sinceAllTimes) * 1000;
-    const until = Math.max(...this.untilAllTimes) * 1000;
-    const sinceMonthly = Math.min(...this.sinceMonthly) * 1000;
-    const untilMonthly = Math.max(...this.untilMonthly) * 1000;
-    const sinceWeekly = Math.min(...this.sinceWeekly) * 1000;
-    const untilWeekly = Math.max(...this.untilWeekly) * 1000;
-
     return [
-      { members: sortedLeaderboard, since, until, stat: 'allTimes' },
+      {
+        members: sortedLeaderboard,
+        since: this.allTimes.since,
+        until: this.allTimes.until,
+        stat: 'allTimes',
+      },
       {
         members: arrayLeaderboardMonthly,
-        since: sinceMonthly,
-        until: untilMonthly,
+        since: this.monthly.since,
+        until: this.monthly.until,
         stat: 'lastMonth',
       },
       {
         members: arrayLeaderboardWeekly,
-        since: sinceWeekly,
-        until: untilWeekly,
+        since: this.weekly.since,
+        until: this.weekly.until,
         stat: 'lastWeek',
       },
     ];
+  }
+
+  proccessTimes(result: { w: number }[]) {
+    return {
+      since: Math.min(...result.map((r) => r.w)) * 1000,
+      until: Math.max(...result.map((r) => r.w)) * 1000,
+    };
   }
 }
 
