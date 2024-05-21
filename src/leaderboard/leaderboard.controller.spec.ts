@@ -24,7 +24,7 @@ describe('LeaderboardController', () => {
   });
 
   it.skip('should return leaderboard data from JSON', async () => {
-    const data = await controller.getMostRecentDataPaginated();
+    const data = await controller.getMostRecentData();
     const parsed = LeaderboardAnalyticsSchema.safeParse(data);
     expect(parsed.error).toBeUndefined();
   });

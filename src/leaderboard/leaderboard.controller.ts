@@ -6,7 +6,7 @@ export class LeaderboardController {
   constructor(private readonly projectsService: LeaderboardService) {}
 
   @Get('/')
-  async getMostRecentDataPaginated() {
+  async getMostRecentData() {
     return this.projectsService.getLeaderboardDataV2();
   }
 
