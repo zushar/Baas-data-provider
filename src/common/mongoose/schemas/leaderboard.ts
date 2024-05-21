@@ -4,7 +4,7 @@ import { Document } from 'mongoose';
 export type LeaderboardDocument = Leaderboard & Document;
 
 @Schema()
-export class Leaderboard {
+export class Member {
   @Prop({ required: true })
   name: string;
 
@@ -26,6 +26,23 @@ export class Leaderboard {
     deletions: number;
     commits: number;
   };
+}
+
+export const MemberSchema = SchemaFactory.createForClass(Member);
+
+@Schema()
+export class Leaderboard {
+  @Prop({ type: [MemberSchema], required: true })
+  members: Member[];
+
+  @Prop({ required: true })
+  since: number;
+
+  @Prop({ required: true })
+  until: number;
+
+  @Prop({ required: true, enum: ['allTimes', 'lastMonth', 'lastWeek'] })
+  stat: 'allTimes' | 'lastMonth' | 'lastWeek';
 }
 
 export const LeaderboardSchema = SchemaFactory.createForClass(Leaderboard);

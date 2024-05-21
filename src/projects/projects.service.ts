@@ -3,6 +3,10 @@ import {
   LanguageDocument,
 } from '@/common/mongoose/schemas/languages';
 import { Project, ProjectDocument } from '@/common/mongoose/schemas/project';
+import {
+  ProjectDocumentV2,
+  ProjectV2,
+} from '@/common/mongoose/schemas/projectV2';
 import { GithubGqlService } from '@/github-gql/github-gql.service';
 import { IGithubGQLResponse } from '@/types';
 import {
@@ -10,6 +14,9 @@ import {
   ProjectPaginationFilter,
   ProjectPaginationRequest,
 } from '@/types/project';
+import GitHubResponseSchema, {
+  summarizeGitHubData,
+} from '@/types/projectV2Schema';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -21,6 +28,8 @@ export class ProjectsService implements OnModuleInit {
     private readonly githubGqlService: GithubGqlService,
     @InjectModel(Project.name)
     private readonly projectModel: Model<ProjectDocument>,
+    @InjectModel(ProjectV2.name)
+    private readonly projectModelV2: Model<ProjectDocumentV2>,
     @InjectModel(Language.name)
     private readonly languageModel: Model<LanguageDocument>,
   ) {}
@@ -29,17 +38,25 @@ export class ProjectsService implements OnModuleInit {
     await this.handleCron();
   }
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  @Cron(CronExpression.EVERY_DAY_AT_10PM)
   async handleCron() {
     await this.deleteOldProjects();
     await this.saveProjects();
+    await this.deleteAllProjectsV2();
+    await this.saveProjectsV2();
   }
 
   private async getProjectsFromGithub() {
     const projectData = await this.githubGqlService.getProjects();
+    const parse = GitHubResponseSchema.array().safeParse(projectData);
+    if (!parse.success) {
+      throw new Error(`Failed to parse GitHub response: ${parse.error}`);
+    }
+    const summary = summarizeGitHubData(parse.data);
+
     const languages = this.buildLanguageUniqueArray(projectData);
 
-    return { projectData, languages, timestamp: new Date() };
+    return { projectData: summary, languages, timestamp: new Date() };
   }
 
   async saveProjects() {
@@ -50,6 +67,19 @@ export class ProjectsService implements OnModuleInit {
 
       await Promise.all(
         projectData.map((project) => this.saveProjectToDb(project, timestamp)),
+      );
+    } catch (error) {
+      Logger.error('Error saving data', error);
+    }
+  }
+  async saveProjectsV2() {
+    const { projectData, languages, timestamp } =
+      await this.getProjectsFromGithub();
+    try {
+      await this.saveLanguageToDb(languages, timestamp);
+
+      await Promise.all(
+        projectData.map((project) => this.saveProjectToDbV2(project)),
       );
     } catch (error) {
       Logger.error('Error saving data', error);
@@ -75,8 +105,17 @@ export class ProjectsService implements OnModuleInit {
         timestamp,
         item: project.item,
         error: project.error,
-        meta: { link: project.meta.link },
+        meta: { link: project.meta?.link },
       });
+
+      await newProjectDocument.save();
+    } catch (error) {
+      Logger.error(error);
+    }
+  }
+  private async saveProjectToDbV2(project) {
+    try {
+      const newProjectDocument = new this.projectModelV2(project);
 
       await newProjectDocument.save();
     } catch (error) {
@@ -86,7 +125,7 @@ export class ProjectsService implements OnModuleInit {
 
   async deleteOldProjects() {
     const fiveDaysAgo = new Date();
-    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5); // 5 days ago
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 1); // 1 days ago
 
     await this.projectModel.deleteMany({
       timestamp: { $lte: fiveDaysAgo },
@@ -221,5 +260,12 @@ export class ProjectsService implements OnModuleInit {
       .exec();
 
     return languages;
+  }
+
+  async getAllProjectsV2() {
+    return await this.projectModelV2.find().exec();
+  }
+  private async deleteAllProjectsV2() {
+    return await this.projectModelV2.deleteMany({}).exec();
   }
 }

@@ -1,6 +1,6 @@
 import { AnalyticsDto } from '@/common/dto/leaderboard';
-import getLeaderBoardDataFROMJSON from '@/common/utils/getLeaderBoardDataFROMJSON';
-import { LeaderboardTypeAnalytics } from '@/types/leaderboard';
+import getLeaderboardDataFromGithub from '@/common/utils/getLeaderBoardDataFromGithubV2';
+import { ProjectsService } from '@/projects/projects.service';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
@@ -9,87 +9,68 @@ import {
   Leaderboard,
   LeaderboardDocument,
 } from '@/common/mongoose/schemas/leaderboard';
+import { mockLeaderboardV2 } from './fixtures/mock-leaderboard-v2';
 
 @Injectable()
 export class LeaderboardService implements OnModuleInit {
   constructor(
     @InjectModel(Leaderboard.name)
-    private readonly ContributorModel: Model<LeaderboardDocument>,
+    private readonly LeaderboardModel: Model<LeaderboardDocument>,
+    private projectsService: ProjectsService,
   ) {}
+
   async onModuleInit() {
-    await this.deleteAllMembers();
     await this.handleCron();
   }
 
   @Cron('0 8 * * 0') // Cron expression for 8:00 AM every Sunday
   async handleCron() {
+    console.log('Running delete all members cron job');
+    await this.deleteLeaderboard();
     console.log('Running fetch and store Contributors cron job');
     await this.fetchAndStoreMembers();
   }
 
   private async fetchAndStoreMembers() {
-    const { membersData, timestamp } = await this.fethLeaderBoardDataFROMJSON();
-
-    await Promise.all(
-      membersData.map((memberData) => {
-        return this.saveFetchedFromGithubContributorToDb(memberData, timestamp);
-      }),
-    );
+    // Right now we are fetching the data from the JSON file.
+    // TODO: Fetch the data from Github API.
+    const data = await this.getLeaderboardJSON();
+    await this.saveFetchedFromGithubContributorToDb(data);
   }
 
-  private async saveFetchedFromGithubContributorToDb(memberData, timestamp) {
+  private async saveFetchedFromGithubContributorToDb(data) {
     try {
       //createOrUpdate member
       //to do - check timestamp in schema
-      await this.ContributorModel.findOneAndUpdate(
-        {
-          node_id: memberData.node_id,
-        },
-        {
-          name: memberData.name,
-          node_id: memberData.node_id,
-          projects_names: memberData.projects_names,
-          avatar_url: memberData.avatar_url,
-          score: memberData.score,
-          stats: memberData.stats,
-          timestamp,
-        },
-        { upsert: true },
-      );
+      await this.LeaderboardModel.insertMany(data);
     } catch (error) {
       console.error('Error saving member to db', error);
     }
   }
 
-  private async fethLeaderBoardDataFROMJSON() {
-    const membersData = getLeaderBoardDataFROMJSON();
-    const timestamp = new Date();
-    return { membersData, timestamp };
+  async getLeaderboardFromGithubV2(): Promise<AnalyticsDto[]> {
+    const allProjects = (await this.projectsService.getAllProjectsV2())
+      .map((p) => ({
+        owner: p.repository.owner?.login ?? '',
+        repo: p.repository.name ?? '',
+      }))
+      // Filter out projects without owner or repo
+      .filter((p) => p.owner && p.repo);
+    return await getLeaderboardDataFromGithub(allProjects);
   }
 
-  async getLeaderboardDataFromDB(): Promise<AnalyticsDto> {
-    const since = '2024-01-05T00:00:00Z';
-    const until = '2024-04-12T00:00:00Z';
-    return {
-      members: await this.ContributorModel.find({
-        timestamp: { $gte: new Date(since), $lte: new Date(until) },
-      }),
-      since,
-      until,
-    } as LeaderboardTypeAnalytics;
+  async getLeaderboardFromDB(): Promise<AnalyticsDto[]> {
+    // TODO: Implement this method as find all members from the database.
+    // Reason: We save only the data we need in the database, so no need to filter the data.
+    const leaderboard = await this.LeaderboardModel.find();
+    return leaderboard;
   }
 
-  async getLeaderboardDataFROMJSON(): Promise<AnalyticsDto> {
-    const since = '2024-01-05T00:00:00Z';
-    const until = '2024-04-12T00:00:00Z';
-    return {
-      members: getLeaderBoardDataFROMJSON(),
-      since,
-      until,
-    } as LeaderboardTypeAnalytics;
+  async getLeaderboardJSON(): Promise<AnalyticsDto[]> {
+    return mockLeaderboardV2;
   }
 
-  private async deleteAllMembers() {
-    await this.ContributorModel.deleteMany({});
+  private async deleteLeaderboard() {
+    await this.LeaderboardModel.deleteMany({});
   }
 }
