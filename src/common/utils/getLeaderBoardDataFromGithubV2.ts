@@ -110,7 +110,7 @@ const processRepoDataAllTimes = (
           deletions: existing.stats.deletions + member.stats.deletions,
           commits: existing.stats.commits + member.stats.commits,
         },
-        projects_names: [...existing.projects_names, ...member.projects_names],
+        projects_names: existing.projects_names.concat(member.projects_names),
       });
     }
   });
@@ -147,7 +147,7 @@ const processRepoDataWeekly = (
           deletions: existing.stats.deletions + member.stats.deletions,
           commits: existing.stats.commits + member.stats.commits,
         },
-        projects_names: [...existing.projects_names, ...member.projects_names],
+        projects_names: existing.projects_names.concat(member.projects_names),
       });
     }
   });
