@@ -50,13 +50,13 @@ describe('LeaderboardService', () => {
 
   it('Parse Leaderboard data. got the worng data', async () => {
     expect(parsedData.error).toBe(undefined);
-    it('should parse leaderboard data from JSON without error', async () => {
-      expect(parsedData.error).toBeUndefined();
-    });
+  });
+  it('should parse leaderboard data from JSON without error', async () => {
+    expect(parsedData.error).toBeUndefined();
+  });
 
-    it('should parse leaderboard data from DB without error', async () => {
-      // Check the db for changes
-      expect(parsedData.error).toBeUndefined();
-    });
+  it('should parse leaderboard data from DB without error', async () => {
+    // Check the db for changes
+    expect(parsedData.error).toBeUndefined();
   });
 });
