@@ -5,12 +5,12 @@ import { LeaderboardService } from './leaderboard.service';
 export class LeaderboardController {
   constructor(private readonly projectsService: LeaderboardService) {}
 
-  @Get('/')
+  // @Get('/')
   async getMostRecentData() {
     return this.projectsService.getLeaderboardDataV2();
   }
 
-  @Get('/DB')
+  @Get('/')
   async getMostRecentDataPaginatedFromDB() {
     return this.projectsService.getLeaderboardDataFromDB();
   }
