@@ -12,6 +12,6 @@ export class LeaderboardController {
 
   @Get('/')
   async getMostRecentDataPaginatedFromDB() {
-    return this.projectsService.getLeaderboardDataFromDB();
+    return this.projectsService.getLeaderboard();
   }
 }

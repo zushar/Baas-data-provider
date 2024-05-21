@@ -26,63 +26,32 @@ export class LeaderboardService implements OnModuleInit {
   @Cron('0 8 * * 0') // Cron expression for 8:00 AM every Sunday
   async handleCron() {
     console.log('Running delete all members cron job');
-    await this.deleteAllMembers();
+    await this.deleteLeaderboard();
     console.log('Running fetch and store Contributors cron job');
     await this.fetchAndStoreMembers();
   }
 
   private async fetchAndStoreMembers() {
-    const { membersData, timestamp } = await this.fethLeaderBoardDataFROMJSON();
-
-    await Promise.all(
-      membersData.map((memberData) => {
-        return this.saveFetchedFromGithubContributorToDb(memberData, timestamp);
-      }),
-    );
+    // This function for mocking the data from JSON file
+    const data = await this.getLeaderboardDataV2();
+    await this.saveFetchedFromGithubContributorToDb(data);
   }
 
-  private async saveFetchedFromGithubContributorToDb(memberData, timestamp) {
+  private async saveFetchedFromGithubContributorToDb(data) {
     try {
       //createOrUpdate member
       //to do - check timestamp in schema
-      await this.LeaderboardModel.findOneAndUpdate(
-        {
-          node_id: memberData.node_id,
-        },
-        {
-          name: memberData.name,
-          node_id: memberData.node_id,
-          projects_names: memberData.projects_names,
-          avatar_url: memberData.avatar_url,
-          score: memberData.score,
-          stats: memberData.stats,
-          timestamp,
-        },
-        { upsert: true },
-      );
+      await this.LeaderboardModel.insertMany(data);
     } catch (error) {
       console.error('Error saving member to db', error);
     }
   }
 
   private async fethLeaderBoardDataFROMJSON() {
+    // TODO: Leaderbaord structure has changed, need to update this method.
     const membersData = getLeaderBoardDataFROMJSON();
     const timestamp = new Date();
     return { membersData, timestamp };
-  }
-
-  async getLeaderboardDataFromDB(): Promise<AnalyticsDto> {
-    const since = 0;
-    const until = 0;
-    // TODO: Implement this method as find all members from the database.
-    // Reason: We save only the data we need in the database, so no need to filter the data.
-    return {
-      members: await this.LeaderboardModel.find({
-        timestamp: { $gte: new Date(since), $lte: new Date(until) },
-      }),
-      since,
-      until,
-    } as LeaderboardTypeAnalytics;
   }
 
   async getLeaderboardDataV2(): Promise<AnalyticsDto[]> {
@@ -96,7 +65,13 @@ export class LeaderboardService implements OnModuleInit {
     return await getLeaderboardDataFromGithub(allProjects);
   }
 
-  private async deleteAllMembers() {
+  private async deleteLeaderboard() {
     await this.LeaderboardModel.deleteMany({});
+  }
+  async getLeaderboard(): Promise<AnalyticsDto> {
+    // TODO: Implement this method as find all members from the database.
+    // Reason: We save only the data we need in the database, so no need to filter the data.
+    const leaderboard = await this.LeaderboardModel.find();
+    return leaderboard as unknown as LeaderboardTypeAnalytics;
   }
 }
