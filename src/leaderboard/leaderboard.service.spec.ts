@@ -44,7 +44,7 @@ describe('LeaderboardService', () => {
     }).compile();
 
     service = module.get<LeaderboardService>(LeaderboardService);
-    const data = await service.getLeaderboardDataV2();
+    const data = await service.getLeaderboardFromGithubV2();
     parsedData = LeaderboardAnalyticsSchema.array().safeParse(data);
   });
 

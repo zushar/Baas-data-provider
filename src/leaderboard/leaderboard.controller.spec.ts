@@ -30,7 +30,7 @@ describe('LeaderboardController', () => {
   });
 
   it.skip('should return leaderboard data from DB', async () => {
-    const data = await controller.getMostRecentDataPaginatedFromDB();
+    const data = await controller.getMostRecentFromDB();
     const parsed = LeaderboardAnalyticsSchema.safeParse(data);
     expect(parsed.error).toBeUndefined();
   });

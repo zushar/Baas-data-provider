@@ -7,11 +7,11 @@ export class LeaderboardController {
 
   // @Get('/')
   async getMostRecentData() {
-    return this.projectsService.getLeaderboardDataV2();
+    return this.projectsService.getLeaderboardFromGithubV2();
   }
 
   @Get('/')
-  async getMostRecentDataPaginatedFromDB() {
-    return this.projectsService.getLeaderboard();
+  async getMostRecentFromDB() {
+    return this.projectsService.getLeaderboardFromDB();
   }
 }

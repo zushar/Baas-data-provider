@@ -1,8 +1,6 @@
 import { AnalyticsDto } from '@/common/dto/leaderboard';
-import getLeaderBoardDataFROMJSON from '@/common/utils/getLeaderBoardDataFROMJSON';
 import getLeaderboardDataFromGithub from '@/common/utils/getLeaderBoardDataFromGithubV2';
 import { ProjectsService } from '@/projects/projects.service';
-import { LeaderboardTypeAnalytics } from '@/types/leaderboard';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
@@ -11,6 +9,7 @@ import {
   Leaderboard,
   LeaderboardDocument,
 } from '@/common/mongoose/schemas/leaderboard';
+import { mockLeaderboardV2 } from './fixtures/mock-leaderboard-v2';
 
 @Injectable()
 export class LeaderboardService implements OnModuleInit {
@@ -19,6 +18,7 @@ export class LeaderboardService implements OnModuleInit {
     private readonly LeaderboardModel: Model<LeaderboardDocument>,
     private projectsService: ProjectsService,
   ) {}
+
   async onModuleInit() {
     await this.handleCron();
   }
@@ -32,8 +32,9 @@ export class LeaderboardService implements OnModuleInit {
   }
 
   private async fetchAndStoreMembers() {
-    // This function for mocking the data from JSON file
-    const data = await this.getLeaderboardDataV2();
+    // Right now we are fetching the data from the JSON file.
+    // TODO: Fetch the data from Github API.
+    const data = await this.getLeaderboardJSON();
     await this.saveFetchedFromGithubContributorToDb(data);
   }
 
@@ -47,31 +48,29 @@ export class LeaderboardService implements OnModuleInit {
     }
   }
 
-  private async fethLeaderBoardDataFROMJSON() {
-    // TODO: Leaderbaord structure has changed, need to update this method.
-    const membersData = getLeaderBoardDataFROMJSON();
-    const timestamp = new Date();
-    return { membersData, timestamp };
-  }
-
-  async getLeaderboardDataV2(): Promise<AnalyticsDto[]> {
+  async getLeaderboardFromGithubV2(): Promise<AnalyticsDto[]> {
     const allProjects = (await this.projectsService.getAllProjectsV2())
       .map((p) => ({
         owner: p.repository.owner?.login ?? '',
         repo: p.repository.name ?? '',
       }))
+      // Filter out projects without owner or repo
       .filter((p) => p.owner && p.repo);
-
     return await getLeaderboardDataFromGithub(allProjects);
+  }
+
+  async getLeaderboardFromDB(): Promise<AnalyticsDto[]> {
+    // TODO: Implement this method as find all members from the database.
+    // Reason: We save only the data we need in the database, so no need to filter the data.
+    const leaderboard = await this.LeaderboardModel.find();
+    return leaderboard;
+  }
+
+  async getLeaderboardJSON(): Promise<AnalyticsDto[]> {
+    return mockLeaderboardV2;
   }
 
   private async deleteLeaderboard() {
     await this.LeaderboardModel.deleteMany({});
-  }
-  async getLeaderboard(): Promise<AnalyticsDto> {
-    // TODO: Implement this method as find all members from the database.
-    // Reason: We save only the data we need in the database, so no need to filter the data.
-    const leaderboard = await this.LeaderboardModel.find();
-    return leaderboard as unknown as LeaderboardTypeAnalytics;
   }
 }
