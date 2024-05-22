@@ -62,7 +62,7 @@ export class ProjectV2 {
     ],
     default: [],
   })
-  errors: {
+  errorsData: {
     type: string | null;
     message: string | null;
   }[];

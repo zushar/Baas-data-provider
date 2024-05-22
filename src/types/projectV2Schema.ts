@@ -407,7 +407,7 @@ const SummarySchema = z.object({
     createdAt: dateToString.nullable(),
     updatedAt: dateToString.nullable(),
   }),
-  errors: z
+  errorsData: z
     .array(
       z
         .object({
@@ -453,7 +453,7 @@ export function summarizeGitHubData(
       createdAt: item.item?.data?.repository?.createdAt ?? null,
       updatedAt: item.item?.data?.repository?.updatedAt ?? null,
     },
-    errors: item.item?.error?.graphQLErrors
+    errorsData: item.item?.error?.graphQLErrors
       ? item.item?.error?.graphQLErrors.map((error) => ({
           type: error.type ?? null,
           message: error.message ?? null,
