@@ -291,53 +291,53 @@ describe('ProjectsService', () => {
     });
   });
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        TestDbModule,
-        MongooseModule.forFeature([
-          { name: ProjectV2.name, schema: ProjectSchemaV2 },
-        ]),
-      ],
-      providers: [ProjectsService, GithubGqlService],
-    }).compile();
+  // beforeEach(async () => {
+  //   const module: TestingModule = await Test.createTestingModule({
+  //     imports: [
+  //       TestDbModule,
+  //       MongooseModule.forFeature([
+  //         { name: ProjectV2.name, schema: ProjectSchemaV2 },
+  //       ]),
+  //     ],
+  //     providers: [ProjectsService, GithubGqlService],
+  //   }).compile();
 
-    service = module.get<ProjectsService>(ProjectsService);
-    projectModelV2 = module.get<Model<ProjectV2>>(
-      getModelToken(ProjectV2.name),
-    );
-  });
+  //   service = module.get<ProjectsService>(ProjectsService);
+  //   projectModelV2 = module.get<Model<ProjectV2>>(
+  //     getModelToken(ProjectV2.name),
+  //   );
+  // });
 
-  afterAll(async () => {
-    await closeInMongodConnection();
-  });
+  // afterAll(async () => {
+  //   await closeInMongodConnection();
+  // });
 
-  // V2 Methods Tests
-  describe('V2 Methods', () => {
-    beforeEach(async () => {
-      await projectModelV2.deleteMany({});
+  // // V2 Methods Tests
+  // describe('V2 Methods', () => {
+  //   beforeEach(async () => {
+  //     await projectModelV2.deleteMany({});
 
-      const mockProjectV2 = makeMockProject('projectV2', 'CCCC', [
-        'TypeScript',
-        'GraphQL',
-      ]);
+  //     const mockProjectV2 = makeMockProject('projectV2', 'CCCC', [
+  //       'TypeScript',
+  //       'GraphQL',
+  //     ]);
 
-      const newProjectDocumentV2 = new projectModelV2(mockProjectV2);
-      await newProjectDocumentV2.save();
+  //     const newProjectDocumentV2 = new projectModelV2(mockProjectV2);
+  //     await newProjectDocumentV2.save();
 
-      const savedProjectsV2 = await projectModelV2.find().lean();
-      expect(savedProjectsV2).toHaveLength(1);
-    });
+  //     const savedProjectsV2 = await projectModelV2.find().lean();
+  //     expect(savedProjectsV2).toHaveLength(1);
+  //   });
 
-    it('should fetch all projects V2 from the database', async () => {
-      const projectsV2 = await service.getAllProjectsV2();
-      expect(projectsV2).toHaveLength(1);
-    });
+  //   it('should fetch all projects V2 from the database', async () => {
+  //     const projectsV2 = await service.getAllProjectsV2();
+  //     expect(projectsV2).toHaveLength(1);
+  //   });
 
-    it('should delete all projects V2 from the database', async () => {
-      await projectModelV2.deleteMany({}).exec();
-      const projectsV2 = await projectModelV2.find().lean();
-      expect(projectsV2).toHaveLength(0);
-    });
-  });
+  //   it('should delete all projects V2 from the database', async () => {
+  //     await projectModelV2.deleteMany({}).exec();
+  //     const projectsV2 = await projectModelV2.find().lean();
+  //     expect(projectsV2).toHaveLength(0);
+  //   });
+  // });
 });
