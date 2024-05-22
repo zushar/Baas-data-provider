@@ -335,7 +335,6 @@ describe('ProjectsService', () => {
     });
 
     it('should delete all projects V2 from the database', async () => {
-      await projectModelV2.deleteMany().exec();
       const projectsV2 = await projectModelV2.find().lean();
       expect(projectsV2).toHaveLength(0);
     });
