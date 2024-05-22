@@ -78,19 +78,6 @@ export class ProjectsService implements OnModuleInit {
       Logger.error('Error saving data', error);
     }
   }
-  async saveProjectsV2() {
-    const { projectData, languages, timestamp } =
-      await this.getProjectsFromGithub();
-    try {
-      await this.saveLanguageToDb(languages, timestamp);
-
-      await Promise.all(
-        projectData.map((project) => this.saveProjectToDbV2(project)),
-      );
-    } catch (error) {
-      Logger.error('Error saving data', error);
-    }
-  }
 
   private async saveLanguageToDb(languages, timestamp) {
     try {
@@ -113,15 +100,6 @@ export class ProjectsService implements OnModuleInit {
         error: project.error,
         meta: { link: project.meta?.link },
       });
-
-      await newProjectDocument.save();
-    } catch (error) {
-      Logger.error(error);
-    }
-  }
-  private async saveProjectToDbV2(project) {
-    try {
-      const newProjectDocument = new this.projectModelV2(project);
 
       await newProjectDocument.save();
     } catch (error) {
@@ -268,10 +246,33 @@ export class ProjectsService implements OnModuleInit {
     return languages;
   }
 
+  // ******* V2 ********
+  async saveProjectsV2() {
+    const { projectData, languages, timestamp } =
+      await this.getProjectsFromGithub();
+    try {
+      await this.saveLanguageToDb(languages, timestamp);
+
+      await Promise.all(
+        projectData.map((project) => this.saveProjectToDbV2(project)),
+      );
+    } catch (error) {
+      Logger.error('Error saving data', error);
+    }
+  }
   async getAllProjectsV2() {
     return await this.projectModelV2.find().exec();
   }
   private async deleteAllProjectsV2() {
     return await this.projectModelV2.deleteMany({}).exec();
+  }
+  private async saveProjectToDbV2(project) {
+    try {
+      const newProjectDocument = new this.projectModelV2(project);
+
+      await newProjectDocument.save();
+    } catch (error) {
+      Logger.error(error);
+    }
   }
 }
