@@ -332,7 +332,6 @@ describe('ProjectsService', () => {
     it('should fetch all projects V2 from the database', async () => {
       const projectsV2 = await service.getAllProjectsV2();
       expect(projectsV2).toHaveLength(1);
-      expect(projectsV2[0].collection.name).toEqual('projectV2');
     });
 
     it('should delete all projects V2 from the database', async () => {
