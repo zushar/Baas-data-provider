@@ -264,8 +264,8 @@ export class ProjectsService implements OnModuleInit {
   async getAllProjectsV2() {
     return await this.projectModelV2.find({}).exec();
   }
-  async deleteAllProjectsV2() {
-    return await this.projectModelV2.deleteMany({}).exec();
+  private async deleteAllProjectsV2() {
+    return await this.projectModelV2.deleteMany().exec();
   }
   private async saveProjectToDbV2(project) {
     try {

@@ -419,6 +419,8 @@ const SummarySchema = z.object({
     .nullable(),
 });
 
+export const SummaryProjectType = SummarySchema;
+
 // Infer the TypeScript type from the summary schema
 export type SummaryProjectType = z.infer<typeof SummarySchema>;
 
