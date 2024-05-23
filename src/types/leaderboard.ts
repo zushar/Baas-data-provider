@@ -22,8 +22,8 @@ const LeaderboardMemberSchema = z.object({
 
 export const LeaderboardAnalyticsSchema = z.object({
   members: z.array(LeaderboardMemberSchema),
-  since: z.string(),
-  until: z.string(),
+  since: z.number(),
+  until: z.number(),
 });
 
 export type LeaderboardTypeAnalytics = z.infer<

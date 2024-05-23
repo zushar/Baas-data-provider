@@ -1,4 +1,4 @@
-import { IsArray, IsNumber, IsObject, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsNumber, IsObject, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class ProjectNameDto {
@@ -47,9 +47,12 @@ export class AnalyticsDto {
   @Type(() => MemberDto)
   members: MemberDto[];
 
-  @IsString()
-  since: string;
+  @IsNumber()
+  since: number;
 
-  @IsString()
-  until: string;
+  @IsNumber()
+  until: number;
+
+  @IsEnum(['allTimes', 'lastMonth', 'lastWeek'])
+  stat: 'allTimes' | 'lastMonth' | 'lastWeek';
 }

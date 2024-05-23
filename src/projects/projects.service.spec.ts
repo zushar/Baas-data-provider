@@ -12,6 +12,11 @@ import {
   TestDbModule,
   closeInMongodConnection,
 } from '@/../test/mocks/module/mongo-in-memory';
+import {
+  ProjectSchemaV2,
+  ProjectV2,
+} from '@/common/mongoose/schemas/projectV2';
+import { SummaryProjectType } from '@/types/projectV2Schema';
 
 const mockProject1 = makeMockProject('project1', 'AAAA', ['JavaScript']);
 const mockProject2 = makeMockProject('project2', 'BBBB', [
@@ -30,6 +35,7 @@ describe('ProjectsService', () => {
   let service: ProjectsService;
   let projectModel: Model<Project>;
   let languageModel: Model<Language>;
+  let projectModelV2: Model<ProjectV2>;
   const timestamp = new Date();
 
   beforeEach(async () => {
@@ -43,6 +49,7 @@ describe('ProjectsService', () => {
         MongooseModule.forFeature([
           { name: 'Project', schema: ProjectSchema },
           { name: 'Language', schema: LanguageSchema },
+          { name: 'ProjectV2', schema: ProjectSchemaV2 },
         ]),
         // Include any setup for in-memory MongoDB here
       ],
@@ -51,6 +58,7 @@ describe('ProjectsService', () => {
     service = module.get<ProjectsService>(ProjectsService);
     projectModel = module.get<Model<Project>>(getModelToken('Project'));
     languageModel = module.get<Model<Language>>(getModelToken('Language'));
+    projectModelV2 = module.get<Model<ProjectV2>>(getModelToken('ProjectV2'));
 
     // Mock the GithubGqlService if you don't want to hit the actual GitHub API in tests
     // Reset mocks before each test to clear previous calls and set the specific behavior for getProjects
@@ -94,6 +102,7 @@ describe('ProjectsService', () => {
     // Clean up database after each test
     await projectModel.deleteMany({});
     await languageModel.deleteMany({});
+    await projectModelV2.deleteMany({});
   });
 
   afterAll(async () => {
@@ -280,6 +289,14 @@ describe('ProjectsService', () => {
       expect(
         projects[0].item.data.repository.contributors.edges.length,
       ).toEqual(10);
+    });
+  });
+
+  describe('ProjectV2', () => {
+    it('should return the most recent projects and languages', async () => {
+      const req = await service.getAllProjectsV2();
+      const parsedProjects = SummaryProjectType.array().safeParse(req);
+      expect(parsedProjects.error).toBeUndefined();
     });
   });
 });
