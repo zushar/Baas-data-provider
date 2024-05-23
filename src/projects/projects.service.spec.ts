@@ -16,6 +16,7 @@ import {
   ProjectSchemaV2,
   ProjectV2,
 } from '@/common/mongoose/schemas/projectV2';
+import { SummaryProjectType } from '@/types/projectV2Schema';
 
 const mockProject1 = makeMockProject('project1', 'AAAA', ['JavaScript']);
 const mockProject2 = makeMockProject('project2', 'BBBB', [
@@ -288,6 +289,14 @@ describe('ProjectsService', () => {
       expect(
         projects[0].item.data.repository.contributors.edges.length,
       ).toEqual(10);
+    });
+  });
+
+  describe('ProjectV2', () => {
+    it('should return the most recent projects and languages', async () => {
+      const req = await service.getAllProjectsV2();
+      const parsedProjects = SummaryProjectType.array().safeParse(req);
+      expect(parsedProjects.error).toBeUndefined();
     });
   });
 });
