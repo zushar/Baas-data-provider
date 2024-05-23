@@ -52,19 +52,6 @@ export class ProjectsService implements OnModuleInit {
     await this.saveProjects();
   }
 
-  private async getProjectsFromGithub() {
-    const projectData = await this.githubGqlService.getProjects();
-    const parse = GitHubResponseSchema.array().safeParse(projectData);
-    if (!parse.success) {
-      throw new Error(`Failed to parse GitHub response: ${parse.error}`);
-    }
-    const summary = summarizeGitHubData(parse.data);
-
-    const languages = this.buildLanguageUniqueArray(projectData);
-
-    return { projectData: summary, languages, timestamp: new Date() };
-  }
-
   async saveProjects() {
     const { projectData, languages, timestamp } =
       await this.getProjectsFromGithub();
@@ -79,34 +66,7 @@ export class ProjectsService implements OnModuleInit {
     }
   }
 
-  private async saveLanguageToDb(languages, timestamp) {
-    try {
-      const newLanguageDocument = new this.languageModel({
-        timestamp,
-        languages,
-      });
-
-      await newLanguageDocument.save();
-    } catch (error) {
-      Logger.error(error);
-    }
-  }
-
-  private async saveProjectToDb(project, timestamp) {
-    try {
-      const newProjectDocument = new this.projectModel({
-        timestamp,
-        item: project.item,
-        error: project.error,
-        meta: { link: project.meta?.link },
-      });
-
-      await newProjectDocument.save();
-    } catch (error) {
-      Logger.error(error);
-    }
-  }
-
+  // This function deletes old projects
   async deleteOldProjects() {
     const fiveDaysAgo = new Date();
     fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 1); // 1 days ago
@@ -117,25 +77,6 @@ export class ProjectsService implements OnModuleInit {
     await this.languageModel.deleteMany({
       timestamp: { $lte: fiveDaysAgo },
     });
-  }
-
-  private buildLanguageUniqueArray(
-    projects: IGithubGQLResponse<IGQLProjectResponse>[],
-  ): string[] {
-    // create a array of unique languages
-    const languages = projects.reduce((acc: string[], project) => {
-      const languages = project.item?.data?.repository.languages?.edges?.map(
-        (edge) => edge.node.name,
-      );
-      if (!languages) return acc;
-      languages.forEach((tag) => {
-        acc.push(tag);
-      });
-      return acc;
-    }, []);
-
-    // return a set of unique languages
-    return [...new Set(languages)];
   }
 
   async getMostrecentDataPaginated({
@@ -246,6 +187,66 @@ export class ProjectsService implements OnModuleInit {
     return languages;
   }
 
+  private async getProjectsFromGithub() {
+    const projectData = await this.githubGqlService.getProjects();
+    const parse = GitHubResponseSchema.array().safeParse(projectData);
+    if (!parse.success) {
+      throw new Error(`Failed to parse GitHub response: ${parse.error}`);
+    }
+    const summary = summarizeGitHubData(parse.data);
+
+    const languages = this.buildLanguageUniqueArray(projectData);
+
+    return { projectData: summary, languages, timestamp: new Date() };
+  }
+
+  private async saveLanguageToDb(languages, timestamp) {
+    try {
+      const newLanguageDocument = new this.languageModel({
+        timestamp,
+        languages,
+      });
+
+      await newLanguageDocument.save();
+    } catch (error) {
+      Logger.error(error);
+    }
+  }
+
+  private async saveProjectToDb(project, timestamp) {
+    try {
+      const newProjectDocument = new this.projectModel({
+        timestamp,
+        item: project.item,
+        error: project.error,
+        meta: { link: project.meta?.link },
+      });
+
+      await newProjectDocument.save();
+    } catch (error) {
+      Logger.error(error);
+    }
+  }
+
+  private buildLanguageUniqueArray(
+    projects: IGithubGQLResponse<IGQLProjectResponse>[],
+  ): string[] {
+    // create a array of unique languages
+    const languages = projects.reduce((acc: string[], project) => {
+      const languages = project.item?.data?.repository.languages?.edges?.map(
+        (edge) => edge.node.name,
+      );
+      if (!languages) return acc;
+      languages.forEach((tag) => {
+        acc.push(tag);
+      });
+      return acc;
+    }, []);
+
+    // return a set of unique languages
+    return [...new Set(languages)];
+  }
+
   // ******* V2 ********
   async saveProjectsV2() {
     const { projectData, languages, timestamp } =
@@ -263,7 +264,7 @@ export class ProjectsService implements OnModuleInit {
   async getAllProjectsV2() {
     return await this.projectModelV2.find({}).exec();
   }
-  private async deleteAllProjectsV2() {
+  async deleteAllProjectsV2() {
     return await this.projectModelV2.deleteMany({}).exec();
   }
   private async saveProjectToDbV2(project) {
