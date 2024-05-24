@@ -52,6 +52,11 @@ export class ProjectsService implements OnModuleInit {
     await this.saveProjects();
   }
 
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async WakeUpCron() {
+    console.info('Wake up call');
+  }
+
   async saveProjects() {
     const { projectData, languages, timestamp } =
       await this.getProjectsFromGithub();
