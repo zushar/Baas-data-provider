@@ -230,8 +230,6 @@ export class ProjectsService implements OnModuleInit {
         error: project.error,
         meta: { link: project.meta?.link },
       });
-      console.log({ newProjectDocument }, 'newProjectDocument');
-      console.log(JSON.stringify({ project }, null, 2), 'project');
 
       await newProjectDocument.save();
     } catch (error) {
