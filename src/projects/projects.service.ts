@@ -8,13 +8,12 @@ import {
   ProjectV2,
 } from '@/common/mongoose/schemas/projectV2';
 import { GithubGqlService } from '@/github-gql/github-gql.service';
-import { IGithubGQLResponse } from '@/types';
 import {
-  IGQLProjectResponse,
   ProjectPaginationFilter,
   ProjectPaginationRequest,
 } from '@/types/project';
 import GitHubResponseSchema, {
+  SummaryProjectType,
   summarizeGitHubData,
 } from '@/types/projectV2Schema';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
@@ -204,7 +203,7 @@ export class ProjectsService implements OnModuleInit {
     }
     const summary = summarizeGitHubData(parse.data);
 
-    const languages = this.buildLanguageUniqueArray(projectData);
+    const languages = this.buildLanguageUniqueArray(summary);
 
     return { projectData: summary, languages, timestamp: new Date() };
   }
@@ -237,23 +236,15 @@ export class ProjectsService implements OnModuleInit {
     }
   }
 
-  private buildLanguageUniqueArray(
-    projects: IGithubGQLResponse<IGQLProjectResponse>[],
-  ): string[] {
+  private buildLanguageUniqueArray(projects: SummaryProjectType[]): string[] {
     // create a array of unique languages
-    const languages = projects.reduce((acc: string[], project) => {
-      const languages = project.item?.data?.repository.languages?.edges?.map(
-        (edge) => edge.node.name,
-      );
-      if (!languages) return acc;
-      languages.forEach((tag) => {
-        acc.push(tag);
-      });
-      return acc;
-    }, []);
+
+    const languages = projects
+      .flatMap((p) => p.repository.languages ?? [])
+      .filter((l) => l) as string[];
 
     // return a set of unique languages
-    return [...new Set(languages)];
+    return Array.from(new Set(languages));
   }
 
   // ******* V2 ********
