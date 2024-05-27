@@ -257,9 +257,7 @@ describe('ProjectsService', () => {
       // const mappedDatesCreatedAt = projects.map(
       //   (project) => new Date(project.item.data.repository.createdAt),
       // );
-      expect(new Date(projects[0].item.data.repository.createdAt)).toEqual(
-        dateLatestCreated,
-      );
+      expect(new Date(projects[0].item.createdAt)).toEqual(dateLatestCreated);
     });
 
     it('should handle the RECENTLY_UPDATED filter correctly', async () => {
@@ -271,9 +269,7 @@ describe('ProjectsService', () => {
       };
       const projects = await service.getPaginatedProjects(request);
       expect(projects).toHaveLength(1);
-      expect(new Date(projects[0].item.data.repository.updatedAt)).toEqual(
-        dateLatestUpdated,
-      );
+      expect(new Date(projects[0].item.updatedAt)).toEqual(dateLatestUpdated);
     });
 
     it('should handle the MOST_CONTRIBUTORS filter correctly', async () => {
@@ -286,9 +282,7 @@ describe('ProjectsService', () => {
       const projects = await service.getPaginatedProjects(request);
       expect(projects).toHaveLength(1);
       // Assuming contributorsCount was added in aggregation
-      expect(
-        projects[0].item.data.repository.contributors.edges.length,
-      ).toEqual(10);
+      expect(projects[0].item.contributors?.length).toEqual(10);
     });
   });
 

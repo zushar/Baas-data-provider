@@ -404,8 +404,8 @@ const SummarySchema = z.object({
           .nullable(),
       )
       .nullable(),
-    createdAt: dateToString.nullable(),
-    updatedAt: dateToString.nullable(),
+    createdAt: dateToString,
+    updatedAt: dateToString,
   }),
   errorsData: z
     .array(
