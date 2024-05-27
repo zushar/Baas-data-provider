@@ -42,6 +42,7 @@ export class ProjectsService implements OnModuleInit {
   @Cron(CronExpression.EVERY_DAY_AT_10PM)
   async handleCron() {
     await this.saveProjects();
+
     await this.deleteAllProjectsV2();
     await this.saveProjectsV2();
   }
@@ -54,24 +55,27 @@ export class ProjectsService implements OnModuleInit {
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async WakeUpCron() {
+    // TODO: Implement a logic to save it on mongoDB and reset the old data
     console.info('Wake up call');
   }
 
   async saveProjects() {
     const { projectData, languages, timestamp } =
       await this.getProjectsFromGithub();
+
     try {
       await this.saveLanguageToDb(languages, timestamp);
 
       await Promise.all(
-        projectData.map((project) => this.saveProjectToDb(project, timestamp)),
+        projectData
+          .filter((p) => p.repository.name || p.repository.owner?.login) // Filter out projects without owner or repo
+          .map((project) => this.saveProjectToDb(project, timestamp)),
       );
     } catch (error) {
       Logger.error('Error saving data', error);
     }
   }
 
-  // This function deletes old projects
   async deleteOldProjects() {
     const fiveDaysAgo = new Date();
     fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 1); // 1 days ago
@@ -222,10 +226,12 @@ export class ProjectsService implements OnModuleInit {
     try {
       const newProjectDocument = new this.projectModel({
         timestamp,
-        item: project.item,
+        item: project.repository,
         error: project.error,
         meta: { link: project.meta?.link },
       });
+      console.log({ newProjectDocument }, 'newProjectDocument');
+      console.log(JSON.stringify({ project }, null, 2), 'project');
 
       await newProjectDocument.save();
     } catch (error) {
