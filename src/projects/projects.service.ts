@@ -126,7 +126,7 @@ export class ProjectsService implements OnModuleInit {
       projects,
       total: totalProjects,
       languages: languages.languages,
-      pageLanguages: this.buildLanguageUniqueArray(projects),
+      pageLanguages: this.buildLanguageUniqueArray(projects.map((p) => p.item)),
       timestamp: languages.timestamp,
     };
   }
