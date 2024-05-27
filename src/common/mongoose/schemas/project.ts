@@ -10,15 +10,15 @@ export class Project {
   timestamp: Date;
 
   @Prop({ type: MongooseSchema.Types.Mixed })
-  item: SummaryProjectType;
-
-  @Prop({ type: MongooseSchema.Types.Mixed })
-  error: Error | null;
+  item: SummaryProjectType['repository'];
 
   @Prop({ required: true, type: Object })
   meta: {
     link: string;
   };
+
+  @Prop({ type: MongooseSchema.Types.Mixed })
+  errorsData: SummaryProjectType['errorsData'];
 }
 
 export const ProjectSchema = SchemaFactory.createForClass(Project);

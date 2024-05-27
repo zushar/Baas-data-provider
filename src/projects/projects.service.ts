@@ -122,11 +122,15 @@ export class ProjectsService implements OnModuleInit {
       .countDocuments({ timestamp: languages.timestamp })
       .exec();
 
+    const pageLanguages = this.buildLanguageUniqueArray(
+      projects.map((p) => p.item),
+    );
+
     return {
       projects,
       total: totalProjects,
       languages: languages.languages,
-      pageLanguages: this.buildLanguageUniqueArray(projects.map((p) => p.item)),
+      pageLanguages,
       timestamp: languages.timestamp,
     };
   }
@@ -203,7 +207,9 @@ export class ProjectsService implements OnModuleInit {
     }
     const summary = summarizeGitHubData(parse.data);
 
-    const languages = this.buildLanguageUniqueArray(summary);
+    const languages = this.buildLanguageUniqueArray(
+      summary.map((p) => p.repository),
+    );
 
     return { projectData: summary, languages, timestamp: new Date() };
   }
@@ -221,13 +227,13 @@ export class ProjectsService implements OnModuleInit {
     }
   }
 
-  private async saveProjectToDb(project, timestamp) {
+  private async saveProjectToDb(project: SummaryProjectType, timestamp) {
     try {
       const newProjectDocument = new this.projectModel({
         timestamp,
         item: project.repository,
-        error: project.error,
-        meta: { link: project.meta?.link },
+        meta: { link: project.repository.url },
+        errorsData: project.errorsData,
       });
 
       await newProjectDocument.save();
@@ -236,11 +242,15 @@ export class ProjectsService implements OnModuleInit {
     }
   }
 
-  private buildLanguageUniqueArray(projects: SummaryProjectType[]): string[] {
+  private buildLanguageUniqueArray(
+    projects: SummaryProjectType['repository'][],
+  ): string[] {
     // create a array of unique languages
 
     const languages = projects
-      .flatMap((p) => p.repository.languages ?? [])
+      .flatMap((p) => {
+        return p?.languages ?? [];
+      })
       .filter((l) => l) as string[];
 
     // return a set of unique languages
