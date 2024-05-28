@@ -39,15 +39,10 @@ export class ProjectsService implements OnModuleInit {
 
   @Cron(CronExpression.EVERY_DAY_AT_10PM)
   async handleCron() {
-    await this.projectModel.deleteMany({}).exec();
     await this.saveProjects();
+    // This ensures that the most recent data is always available
+    await this.deletePastDuplicatedProjects();
   }
-  // TODO: Implement a logic to delete old projects just after getting new ones seccessfully
-  // @Cron(CronExpression.EVERY_WEEK)
-  // async handleCronDelete() {
-  //   await this.deleteOldProjects();
-  //   await this.saveProjects();
-  // }
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async WakeUpCron() {

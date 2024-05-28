@@ -167,13 +167,10 @@ describe('ProjectsService', () => {
       ]);
     });
 
-    it('should handle the ALL filter correctly', async () => {});
-
-    it('should handle the RECENTLY_CREATED filter correctly', async () => {});
-    // it('should return the most recent projects and languages', async () => {
-    //   const req = await service.getAllProjectsV2();
-    //   const parsedProjects = SummaryProjectType.array().safeParse(req);
-    //   expect(parsedProjects.error).toBeUndefined();
-    // });
+    it('should return the most recent projects and languages', async () => {
+      const req = await service.getAllProjects();
+      const parsedProjects = SummaryProjectType.array().safeParse(req);
+      expect(parsedProjects.error).toBeUndefined();
+    });
   });
 });
