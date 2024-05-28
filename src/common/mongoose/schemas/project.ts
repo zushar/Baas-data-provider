@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { type HydratedDocument, Schema as MongooseSchema } from 'mongoose';
-import { IGQLProjectResponse } from '@/types/project'; // Import the 'IGQLProjectResponse' type
+import { SummaryProjectType } from '@/types/projectV2Schema';
 
 export type ProjectDocument = HydratedDocument<Project>;
 
@@ -10,15 +10,15 @@ export class Project {
   timestamp: Date;
 
   @Prop({ type: MongooseSchema.Types.Mixed })
-  item: IGQLProjectResponse;
-
-  @Prop({ type: MongooseSchema.Types.Mixed })
-  error: Error | null;
+  item: SummaryProjectType['repository'];
 
   @Prop({ required: true, type: Object })
   meta: {
     link: string;
   };
+
+  @Prop({ type: MongooseSchema.Types.Mixed })
+  errorsData: SummaryProjectType['errorsData'];
 }
 
 export const ProjectSchema = SchemaFactory.createForClass(Project);
