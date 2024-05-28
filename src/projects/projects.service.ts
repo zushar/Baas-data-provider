@@ -35,22 +35,19 @@ export class ProjectsService implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     await this.handleCron();
-    await this.handleCronDelete();
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_10PM)
   async handleCron() {
+    await this.projectModel.deleteMany({}).exec();
     await this.saveProjects();
-
-    await this.deleteAllProjectsV2();
-    await this.saveProjectsV2();
   }
   // TODO: Implement a logic to delete old projects just after getting new ones seccessfully
-  @Cron(CronExpression.EVERY_WEEK)
-  async handleCronDelete() {
-    await this.deleteOldProjects();
-    await this.saveProjects();
-  }
+  // @Cron(CronExpression.EVERY_WEEK)
+  // async handleCronDelete() {
+  //   await this.deleteOldProjects();
+  //   await this.saveProjects();
+  // }
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async WakeUpCron() {
@@ -255,5 +252,9 @@ export class ProjectsService implements OnModuleInit {
 
     // return a set of unique languages
     return Array.from(new Set(languages));
+  }
+
+  async getAllProjects() {
+    return await this.projectModel.find({}).exec();
   }
 }
