@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { ProjectPaginationRequestBodyDto } from '@/common/dto/project';
 
@@ -11,5 +11,15 @@ export class ProjectsController {
     @Body() paginationRequest: ProjectPaginationRequestBodyDto,
   ) {
     return this.projectsService.getMostrecentDataPaginated(paginationRequest);
+  }
+
+  @Get('/all')
+  async getAllProjects() {
+    return this.projectsService.getAllProjects();
+  }
+
+  @Get('/update')
+  async updateProjects() {
+    return this.projectsService.saveProjects();
   }
 }
