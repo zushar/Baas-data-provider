@@ -1,4 +1,3 @@
-import * as pThrottle from 'p-throttle';
 import { z } from 'zod';
 
 // Step 1: Schema and Types
@@ -68,13 +67,27 @@ const calculateTotals = (weeks: GithubContributorStats[number]['weeks']) =>
 
 const fetchRepoData = async (owner: string, repo: string) => {
   const url = `https://api.github.com/repos/${owner}/${repo}/stats/contributors`;
-  // This log is for debugging purposes only
-  console.log(`Fetching data for ${owner}/${repo}`, url);
-  const response = await fetch(url);
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
+  });
   if (!response.ok) {
     throw new Error(
       `Failed to fetch data for ${owner}/${repo}, ${response.status}`,
     );
+  }
+  // This log is for debugging purposes only
+  console.log(
+    `Fetcht data for ${owner}/${repo} with status ${response.status}`,
+  );
+  if (response.status === 202) {
+    console.log('Retrying in 30 seconds');
+    await new Promise((resolve) => setTimeout(resolve, 30000));
+    return fetchRepoData(owner, repo);
   }
   const json = await response.json();
   return { owner, repo, json };
@@ -202,23 +215,10 @@ const normalizeScores = (members: Analytics['members']) => {
 };
 
 const fetchAndThrottle = async (repos: { owner: string; repo: string }[]) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const throttle4 = (pThrottle as any)({
-    limit: 60,
-    interval: 1000 * 60 * 60, // 10 requests per hour
-    onDelay: () => {
-      console.log('Reached interval limit, call is delayed');
-    },
-  });
-
-  const throttledFetchRepoData = throttle4((owner: string, repo: string) =>
-    fetchRepoData(owner, repo),
-  );
-
   const results = await Promise.allSettled(
     repos.map(
       ({ owner, repo }) =>
-        throttledFetchRepoData(owner, repo) as unknown as ReturnType<
+        fetchRepoData(owner, repo) as unknown as ReturnType<
           typeof fetchRepoData
         >,
     ),
