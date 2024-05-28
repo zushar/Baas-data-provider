@@ -150,7 +150,7 @@ export class ProjectsService implements OnModuleInit {
         {
           $addFields: {
             contributorsCount: {
-              $size: '$item.data.repository.contributors.edges',
+              $size: '$item.contributors',
             },
           },
         },
@@ -168,10 +168,10 @@ export class ProjectsService implements OnModuleInit {
       let sortCriteria = {};
       switch (filter) {
         case ProjectPaginationFilter.RECENTLY_UPDATED:
-          sortCriteria = { 'item.data.repository.updatedAt': -1 };
+          sortCriteria = { 'item.updatedAt': -1 };
           break;
         case ProjectPaginationFilter.RECENTLY_CREATED:
-          sortCriteria = { 'item.data.repository.createdAt': -1 };
+          sortCriteria = { 'item.createdAt': -1 };
           break;
         case ProjectPaginationFilter.ALL:
         default:
