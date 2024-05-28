@@ -15,7 +15,7 @@ import {
   ProjectSchemaV2,
   ProjectV2,
 } from '@/common/mongoose/schemas/projectV2';
-import { SummaryProjectType } from '@/types/projectV2Schema';
+import { ProjectDBItem, SummaryProjectType } from '@/types/projectV2Schema';
 
 const mockProject1 = makeMockProject('project1', 'AAAA', ['JavaScript']);
 const mockProject2 = makeMockProject('project2', 'BBBB', [
@@ -112,19 +112,6 @@ describe('ProjectsService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('Project fetching and saving', () => {
-    it('should fetch projects from GitHub and save them to the database', async () => {});
-  });
-
-  describe('getLanguages', () => {
-    it('should return the most recent languages document', async () => {});
-  });
-
-  describe('getMostrecentDataPaginated', () => {
-    it('should return the most recent projects and languages', async () => {});
-    it('should return projects based on pagination and filter', async () => {});
-  });
-
   describe('getPaginatedProjects with filter', () => {
     const dateEarliestCreated = new Date('2023-01-02T00:00:00Z');
     const dateLatestCreated = new Date('2023-01-03T00:00:00Z');
@@ -169,7 +156,7 @@ describe('ProjectsService', () => {
 
     it('should return the most recent projects and languages', async () => {
       const req = await service.getAllProjects();
-      const parsedProjects = SummaryProjectType.array().safeParse(req);
+      const parsedProjects = ProjectDBItem.array().safeParse(req);
       expect(parsedProjects.error).toBeUndefined();
     });
   });
