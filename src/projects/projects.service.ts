@@ -256,34 +256,4 @@ export class ProjectsService implements OnModuleInit {
     // return a set of unique languages
     return Array.from(new Set(languages));
   }
-
-  // ******* V2 ********
-  async saveProjectsV2() {
-    const { projectData, languages, timestamp } =
-      await this.getProjectsFromGithub();
-    try {
-      await this.saveLanguageToDb(languages, timestamp);
-
-      await Promise.all(
-        projectData.map((project) => this.saveProjectToDbV2(project)),
-      );
-    } catch (error) {
-      Logger.error('Error saving data', error);
-    }
-  }
-  async getAllProjectsV2() {
-    return await this.projectModelV2.find({}).exec();
-  }
-  private async deleteAllProjectsV2() {
-    return await this.projectModelV2.deleteMany().exec();
-  }
-  private async saveProjectToDbV2(project) {
-    try {
-      const newProjectDocument = new this.projectModelV2(project);
-
-      await newProjectDocument.save();
-    } catch (error) {
-      Logger.error(error);
-    }
-  }
 }
