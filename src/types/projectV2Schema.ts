@@ -470,3 +470,5 @@ export const ProjectDBItem = z.object({
   meta: z.object({ link: SummaryProjectType.shape.repository.shape.url }),
   errorsData: SummaryProjectType.shape.errorsData,
 });
+
+export type ProjectDBItemType = z.infer<typeof ProjectDBItem>;
