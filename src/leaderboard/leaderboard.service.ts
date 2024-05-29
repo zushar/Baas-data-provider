@@ -9,7 +9,6 @@ import {
   Leaderboard,
   LeaderboardDocument,
 } from '@/common/mongoose/schemas/leaderboard';
-import { mockLeaderboardV2 } from './fixtures/mock-leaderboard-v2';
 
 @Injectable()
 export class LeaderboardService implements OnModuleInit {
@@ -32,9 +31,7 @@ export class LeaderboardService implements OnModuleInit {
   }
 
   private async fetchAndStoreMembers() {
-    // Right now we are fetching the data from the JSON file.
-    // TODO: Fetch the data from Github API.
-    const data = await this.getLeaderboardJSON();
+    const data = await this.getLeaderboardFromGithubV2();
     await this.saveFetchedFromGithubContributorToDb(data);
   }
 
@@ -64,10 +61,6 @@ export class LeaderboardService implements OnModuleInit {
     // Reason: We save only the data we need in the database, so no need to filter the data.
     const leaderboard = await this.LeaderboardModel.find();
     return leaderboard;
-  }
-
-  async getLeaderboardJSON(): Promise<AnalyticsDto[]> {
-    return mockLeaderboardV2;
   }
 
   private async deleteLeaderboard() {
