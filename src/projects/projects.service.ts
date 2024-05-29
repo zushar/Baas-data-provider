@@ -3,10 +3,7 @@ import {
   LanguageDocument,
 } from '@/common/mongoose/schemas/languages';
 import { Project, ProjectDocument } from '@/common/mongoose/schemas/project';
-import {
-  ProjectDocumentV2,
-  ProjectV2,
-} from '@/common/mongoose/schemas/projectV2';
+
 import { GithubGqlService } from '@/github-gql/github-gql.service';
 import {
   ProjectPaginationFilter,
@@ -27,8 +24,6 @@ export class ProjectsService implements OnModuleInit {
     private readonly githubGqlService: GithubGqlService,
     @InjectModel(Project.name)
     private readonly projectModel: Model<ProjectDocument>,
-    @InjectModel(ProjectV2.name)
-    private readonly projectModelV2: Model<ProjectDocumentV2>,
     @InjectModel(Language.name)
     private readonly languageModel: Model<LanguageDocument>,
   ) {}
