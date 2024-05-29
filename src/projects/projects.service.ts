@@ -3,10 +3,7 @@ import {
   LanguageDocument,
 } from '@/common/mongoose/schemas/languages';
 import { Project, ProjectDocument } from '@/common/mongoose/schemas/project';
-import {
-  ProjectDocumentV2,
-  ProjectV2,
-} from '@/common/mongoose/schemas/projectV2';
+
 import { GithubGqlService } from '@/github-gql/github-gql.service';
 import {
   ProjectPaginationFilter,
@@ -27,8 +24,6 @@ export class ProjectsService implements OnModuleInit {
     private readonly githubGqlService: GithubGqlService,
     @InjectModel(Project.name)
     private readonly projectModel: Model<ProjectDocument>,
-    @InjectModel(ProjectV2.name)
-    private readonly projectModelV2: Model<ProjectDocumentV2>,
     @InjectModel(Language.name)
     private readonly languageModel: Model<LanguageDocument>,
   ) {}
@@ -39,15 +34,10 @@ export class ProjectsService implements OnModuleInit {
 
   @Cron(CronExpression.EVERY_DAY_AT_10PM)
   async handleCron() {
-    await this.projectModel.deleteMany({}).exec();
     await this.saveProjects();
+    // This ensures that the most recent data is always available
+    await this.deletePastDuplicatedProjects();
   }
-  // TODO: Implement a logic to delete old projects just after getting new ones seccessfully
-  // @Cron(CronExpression.EVERY_WEEK)
-  // async handleCronDelete() {
-  //   await this.deleteOldProjects();
-  //   await this.saveProjects();
-  // }
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async WakeUpCron() {
@@ -67,11 +57,12 @@ export class ProjectsService implements OnModuleInit {
           .filter((p) => p.repository.name || p.repository.owner?.login) // Filter out projects without owner or repo
           .map((project) => this.saveProjectToDb(project, timestamp)),
       );
+      return { success: true, message: 'Data saved successfully' };
     } catch (error) {
       Logger.error('Error saving data', error);
+      return { success: false, message: 'Error saving data' };
     }
   }
-
   async deleteOldProjects() {
     const fiveDaysAgo = new Date();
     fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 1); // 1 days ago
@@ -83,7 +74,6 @@ export class ProjectsService implements OnModuleInit {
       timestamp: { $lte: fiveDaysAgo },
     });
   }
-
   async getMostrecentDataPaginated({
     page,
     limit,
@@ -131,7 +121,6 @@ export class ProjectsService implements OnModuleInit {
       timestamp: languages.timestamp,
     };
   }
-
   async getPaginatedProjects({
     page,
     limit,
@@ -185,7 +174,6 @@ export class ProjectsService implements OnModuleInit {
         .exec();
     }
   }
-
   async getLanguages() {
     const languages = await this.languageModel
       .findOne()
@@ -195,7 +183,6 @@ export class ProjectsService implements OnModuleInit {
 
     return languages;
   }
-
   private async getProjectsFromGithub() {
     const projectData = await this.githubGqlService.getProjects();
     const parse = GitHubResponseSchema.array().safeParse(projectData);
@@ -210,7 +197,6 @@ export class ProjectsService implements OnModuleInit {
 
     return { projectData: summary, languages, timestamp: new Date() };
   }
-
   private async saveLanguageToDb(languages, timestamp) {
     try {
       const newLanguageDocument = new this.languageModel({
@@ -223,7 +209,6 @@ export class ProjectsService implements OnModuleInit {
       Logger.error(error);
     }
   }
-
   private async saveProjectToDb(project: SummaryProjectType, timestamp) {
     try {
       const newProjectDocument = new this.projectModel({
@@ -238,7 +223,6 @@ export class ProjectsService implements OnModuleInit {
       Logger.error(error);
     }
   }
-
   private buildLanguageUniqueArray(
     projects: SummaryProjectType['repository'][],
   ): string[] {
@@ -253,8 +237,45 @@ export class ProjectsService implements OnModuleInit {
     // return a set of unique languages
     return Array.from(new Set(languages));
   }
-
   async getAllProjects() {
     return await this.projectModel.find({}).exec();
+  }
+  async deletePastDuplicatedProjects() {
+    try {
+      // Retrieve all projects from the database
+      const projects = await this.getAllProjects();
+
+      // Sort projects by update time, treating null as the oldest date
+      projects.sort((a, b) => {
+        const dateA = a.item.updatedAt
+          ? new Date(a.item.updatedAt).getTime()
+          : 0;
+        const dateB = b.item.updatedAt
+          ? new Date(b.item.updatedAt).getTime()
+          : 0;
+        return dateB - dateA;
+      });
+
+      // Filter out unique projects, keeping only the most recently updated ones
+      const uniqueProjects = projects.filter(
+        (project, index, self) =>
+          index ===
+          self.findIndex(
+            (t) =>
+              t.item.name === project.item.name &&
+              t.item.owner?.login === project.item.owner?.login,
+          ),
+      );
+
+      // Delete all projects from the database
+      await this.projectModel.deleteMany({}).exec();
+
+      // Insert unique projects back into the database
+      await this.projectModel.insertMany(uniqueProjects);
+
+      console.log('Deleted duplicate projects and reinserted unique ones.');
+    } catch (error) {
+      console.error('Error deleting duplicate projects:', error);
+    }
   }
 }

@@ -463,3 +463,12 @@ export function summarizeGitHubData(
       : [],
   }));
 }
+
+export const ProjectDBItem = z.object({
+  timestamp: z.date(),
+  item: SummaryProjectType.shape.repository,
+  meta: z.object({ link: SummaryProjectType.shape.repository.shape.url }),
+  errorsData: SummaryProjectType.shape.errorsData,
+});
+
+export type ProjectDBItemType = z.infer<typeof ProjectDBItem>;
