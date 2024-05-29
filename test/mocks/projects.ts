@@ -23,17 +23,17 @@ export default function makeMockProject(
       },
       description: null,
       url: 'https://github.com/keephq/keep',
-      stargazerCount: null,
-      languages: languages.length ? languages : null,
+      stargazerCount: 0,
+      languages: languages.length ? languages : [],
       contributors: [
         {
           avatarUrl:
             'https://avatars.githubusercontent.com/u/24523?u=44ee2cafc2109ac11f98f78313a97556eaff972b&v=4',
           login: ownerLogin,
         },
-      ] as ({ login: string | null; avatarUrl: string | null } | null)[] | null,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
+      ],
+      createdAt: createdAt.toISOString(),
+      updatedAt: updatedAt.toISOString(),
     },
   };
   return project;

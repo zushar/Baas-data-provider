@@ -44,7 +44,6 @@ describe('ProjectsService', () => {
           { name: 'Project', schema: ProjectSchema },
           { name: 'Language', schema: LanguageSchema },
         ]),
-        // Include any setup for in-memory MongoDB here
       ],
     }).compile();
 
@@ -52,33 +51,26 @@ describe('ProjectsService', () => {
     projectModel = module.get<Model<Project>>(getModelToken('Project'));
     languageModel = module.get<Model<Language>>(getModelToken('Language'));
 
-    // Mock the GithubGqlService if you don't want to hit the actual GitHub API in tests
-    // Reset mocks before each test to clear previous calls and set the specific behavior for getProjects
     mockGithubGqlService.getProjects.mockReset();
     mockGithubGqlService.getProjects.mockImplementation(
       async (): Promise<IGithubGQLResponse<ProjectDBItemType>[]> => {
-        return mockProjectsArray.map((project) => {
-          return {
-            item: project,
-            error: null,
-            meta: {
-              link: 'https://github.com',
-            },
-          };
-        });
+        return mockProjectsArray.map((project) => ({
+          item: project,
+          error: null,
+          meta: {
+            link: 'https://github.com',
+          },
+        }));
       },
     );
 
-    // add languages to the database
     const newLanguages = ['JavaScript', 'CSS', 'HTML'];
-
     const newLanguageDocument = new languageModel({
       timestamp,
       languages: newLanguages,
     });
     await newLanguageDocument.save();
 
-    // Add projects to the database
     await Promise.all(
       mockProjectsArray.map((project) => {
         const newProjectDocument = new projectModel(project);
@@ -88,13 +80,12 @@ describe('ProjectsService', () => {
   });
 
   afterEach(async () => {
-    // Clean up database after each test
     await projectModel.deleteMany({});
     await languageModel.deleteMany({});
   });
 
   afterAll(async () => {
-    await closeInMongodConnection(); // Close the database connection after all tests
+    await closeInMongodConnection();
   });
 
   it('should be defined', () => {
@@ -108,11 +99,9 @@ describe('ProjectsService', () => {
     const dateLatestUpdated = new Date('2023-01-04T00:00:00Z');
 
     beforeEach(async () => {
-      // Reset and populate the database with mock data suitable for testing each filter
       await projectModel.deleteMany({});
       await languageModel.deleteMany({});
 
-      // Insert languages
       const newLanguages = ['JavaScript', 'CSS', 'HTML'];
       const newLanguageDocument = new languageModel({
         timestamp,
@@ -135,12 +124,7 @@ describe('ProjectsService', () => {
         dateLatestUpdated,
       );
 
-      // Insert projects with varied createdAt, updatedAt, and contributors for testing
-      // Note: Adjust the structure as per your actual model and test requirements
-      await projectModel.insertMany([
-        { item: mockProjectA, timestamp, meta: {} },
-        { item: mockProjectB, timestamp, meta: {} },
-      ]);
+      await projectModel.insertMany([mockProjectA, mockProjectB]);
     });
 
     it('should return the most recent projects and languages', async () => {
