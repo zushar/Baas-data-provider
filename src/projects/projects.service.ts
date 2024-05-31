@@ -104,7 +104,6 @@ export class ProjectsService implements OnModuleInit {
       filter,
     });
 
-    // get total count of projects
     const totalProjects = await this.projectModel
       .countDocuments({ timestamp: languages.timestamp })
       .exec();
@@ -127,12 +126,9 @@ export class ProjectsService implements OnModuleInit {
     timestamp,
     filter,
   }: ProjectPaginationRequest): Promise<ProjectDocument[]> {
-    // Handle MOST_CONTRIBUTORS filter with aggregation
     if (filter === ProjectPaginationFilter.MOST_CONTROBUTORS) {
       const aggregationPipeline: PipelineStage[] = [
-        // Match stage to filter documents based on the provided timestamp
-        { $match: { timestamp: { $eq: timestamp } } },
-        // Project the size of the contributors.edges array to a new field
+        { $match: timestamp ? { timestamp: new Date(timestamp) } : {} },
         {
           $addFields: {
             contributorsCount: {
@@ -140,18 +136,15 @@ export class ProjectsService implements OnModuleInit {
             },
           },
         },
-        // Sort by the newly added contributorsCount field
         { $sort: { contributorsCount: -1 } },
-        // Apply pagination
         { $skip: (page - 1) * limit },
         { $limit: limit },
       ];
 
-      // Execute the aggregation pipeline for the MOST_CONTRIBUTORS filter
       return await this.projectModel.aggregate(aggregationPipeline).exec();
     } else {
-      // Handle other filters with simple query
       let sortCriteria = {};
+      const query = {};
       switch (filter) {
         case ProjectPaginationFilter.RECENTLY_UPDATED:
           sortCriteria = { 'item.updatedAt': -1 };
@@ -161,13 +154,12 @@ export class ProjectsService implements OnModuleInit {
           break;
         case ProjectPaginationFilter.ALL:
         default:
-          sortCriteria = { createdAt: -1 }; // Default sorting
+          sortCriteria = { 'item.createdAt': -1 };
           break;
       }
 
-      // Execute a find query for filters other than MOST_CONTRIBUTORS
       return await this.projectModel
-        .find(timestamp ? { timestamp: { $eq: timestamp } } : {})
+        .find(query)
         .sort(sortCriteria)
         .skip((page - 1) * limit)
         .limit(limit)
