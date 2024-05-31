@@ -6,7 +6,6 @@ import { Project, ProjectSchema } from '@/common/mongoose/schemas/project';
 import { Language, LanguageSchema } from '@/common/mongoose/schemas/languages';
 import { ScheduleModule } from '@nestjs/schedule';
 import { GithubGqlModule } from '@/github-gql/github-gql.module';
-import { ProjectSchemaV2 } from '@/common/mongoose/schemas/projectV2';
 
 @Module({
   providers: [ProjectsService],
@@ -19,10 +18,6 @@ import { ProjectSchemaV2 } from '@/common/mongoose/schemas/projectV2';
       {
         name: Language.name,
         schema: LanguageSchema,
-      },
-      {
-        name: 'ProjectV2',
-        schema: ProjectSchemaV2,
       },
     ]),
   ],

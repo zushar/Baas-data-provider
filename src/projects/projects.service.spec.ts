@@ -129,7 +129,6 @@ describe('ProjectsService', () => {
 
     it('should return the most recent projects and languages', async () => {
       const req = await service.getAllProjects();
-      console.log(req);
       const parsedProjects = ProjectDBItem.array().safeParse(req);
       expect(parsedProjects.error).toBeUndefined();
     });
