@@ -3,18 +3,14 @@ import {
   LanguageDocument,
 } from '@/common/mongoose/schemas/languages';
 import { Project, ProjectDocument } from '@/common/mongoose/schemas/project';
-import {
-  ProjectDocumentV2,
-  ProjectV2,
-} from '@/common/mongoose/schemas/projectV2';
+
 import { GithubGqlService } from '@/github-gql/github-gql.service';
-import { IGithubGQLResponse } from '@/types';
 import {
-  IGQLProjectResponse,
   ProjectPaginationFilter,
   ProjectPaginationRequest,
 } from '@/types/project';
 import GitHubResponseSchema, {
+  SummaryProjectType,
   summarizeGitHubData,
 } from '@/types/projectV2Schema';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
@@ -28,45 +24,45 @@ export class ProjectsService implements OnModuleInit {
     private readonly githubGqlService: GithubGqlService,
     @InjectModel(Project.name)
     private readonly projectModel: Model<ProjectDocument>,
-    @InjectModel(ProjectV2.name)
-    private readonly projectModelV2: Model<ProjectDocumentV2>,
     @InjectModel(Language.name)
     private readonly languageModel: Model<LanguageDocument>,
   ) {}
 
   async onModuleInit(): Promise<void> {
     await this.handleCron();
-    await this.handleCronDelete();
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_10PM)
   async handleCron() {
     await this.saveProjects();
-    await this.deleteAllProjectsV2();
-    await this.saveProjectsV2();
+    // This ensures that the most recent data is always available
+    await this.deletePastDuplicatedProjects();
   }
-  // TODO: Implement a logic to delete old projects just after getting new ones seccessfully
-  @Cron(CronExpression.EVERY_WEEK)
-  async handleCronDelete() {
-    await this.deleteOldProjects();
-    await this.saveProjects();
+
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async WakeUpCron() {
+    // TODO: Implement a logic to save it on mongoDB and reset the old data
+    console.info('Wake up call');
   }
 
   async saveProjects() {
     const { projectData, languages, timestamp } =
       await this.getProjectsFromGithub();
+
     try {
       await this.saveLanguageToDb(languages, timestamp);
 
       await Promise.all(
-        projectData.map((project) => this.saveProjectToDb(project, timestamp)),
+        projectData
+          .filter((p) => p.repository.name || p.repository.owner?.login) // Filter out projects without owner or repo
+          .map((project) => this.saveProjectToDb(project, timestamp)),
       );
+      return { success: true, message: 'Data saved successfully' };
     } catch (error) {
       Logger.error('Error saving data', error);
+      return { success: false, message: 'Error saving data' };
     }
   }
-
-  // This function deletes old projects
   async deleteOldProjects() {
     const fiveDaysAgo = new Date();
     fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 1); // 1 days ago
@@ -78,7 +74,6 @@ export class ProjectsService implements OnModuleInit {
       timestamp: { $lte: fiveDaysAgo },
     });
   }
-
   async getMostrecentDataPaginated({
     page,
     limit,
@@ -109,74 +104,68 @@ export class ProjectsService implements OnModuleInit {
       filter,
     });
 
-    // get total count of projects
     const totalProjects = await this.projectModel
       .countDocuments({ timestamp: languages.timestamp })
       .exec();
+
+    const pageLanguages = this.buildLanguageUniqueArray(
+      projects.map((p) => p.item),
+    );
 
     return {
       projects,
       total: totalProjects,
       languages: languages.languages,
-      pageLanguages: this.buildLanguageUniqueArray(projects),
+      pageLanguages,
       timestamp: languages.timestamp,
     };
   }
-
   async getPaginatedProjects({
     page,
     limit,
     timestamp,
     filter,
   }: ProjectPaginationRequest): Promise<ProjectDocument[]> {
-    // Handle MOST_CONTRIBUTORS filter with aggregation
     if (filter === ProjectPaginationFilter.MOST_CONTROBUTORS) {
       const aggregationPipeline: PipelineStage[] = [
-        // Match stage to filter documents based on the provided timestamp
-        { $match: { timestamp: { $eq: timestamp } } },
-        // Project the size of the contributors.edges array to a new field
+        { $match: timestamp ? { timestamp: new Date(timestamp) } : {} },
         {
           $addFields: {
             contributorsCount: {
-              $size: '$item.data.repository.contributors.edges',
+              $size: '$item.contributors',
             },
           },
         },
-        // Sort by the newly added contributorsCount field
         { $sort: { contributorsCount: -1 } },
-        // Apply pagination
         { $skip: (page - 1) * limit },
         { $limit: limit },
       ];
 
-      // Execute the aggregation pipeline for the MOST_CONTRIBUTORS filter
       return await this.projectModel.aggregate(aggregationPipeline).exec();
     } else {
-      // Handle other filters with simple query
       let sortCriteria = {};
+      const query = {};
       switch (filter) {
         case ProjectPaginationFilter.RECENTLY_UPDATED:
-          sortCriteria = { 'item.data.repository.updatedAt': -1 };
+          sortCriteria = { 'item.updatedAt': -1 };
           break;
         case ProjectPaginationFilter.RECENTLY_CREATED:
-          sortCriteria = { 'item.data.repository.createdAt': -1 };
+          sortCriteria = { 'item.createdAt': -1 };
           break;
         case ProjectPaginationFilter.ALL:
         default:
-          sortCriteria = { createdAt: -1 }; // Default sorting
+          sortCriteria = { 'item.createdAt': -1 };
           break;
       }
 
-      // Execute a find query for filters other than MOST_CONTRIBUTORS
       return await this.projectModel
-        .find(timestamp ? { timestamp: { $eq: timestamp } } : {})
+        .find(query)
         .sort(sortCriteria)
         .skip((page - 1) * limit)
         .limit(limit)
         .exec();
     }
   }
-
   async getLanguages() {
     const languages = await this.languageModel
       .findOne()
@@ -186,7 +175,6 @@ export class ProjectsService implements OnModuleInit {
 
     return languages;
   }
-
   private async getProjectsFromGithub() {
     const projectData = await this.githubGqlService.getProjects();
     const parse = GitHubResponseSchema.array().safeParse(projectData);
@@ -195,11 +183,12 @@ export class ProjectsService implements OnModuleInit {
     }
     const summary = summarizeGitHubData(parse.data);
 
-    const languages = this.buildLanguageUniqueArray(projectData);
+    const languages = this.buildLanguageUniqueArray(
+      summary.map((p) => p.repository),
+    );
 
     return { projectData: summary, languages, timestamp: new Date() };
   }
-
   private async saveLanguageToDb(languages, timestamp) {
     try {
       const newLanguageDocument = new this.languageModel({
@@ -212,14 +201,13 @@ export class ProjectsService implements OnModuleInit {
       Logger.error(error);
     }
   }
-
-  private async saveProjectToDb(project, timestamp) {
+  private async saveProjectToDb(project: SummaryProjectType, timestamp) {
     try {
       const newProjectDocument = new this.projectModel({
         timestamp,
-        item: project.item,
-        error: project.error,
-        meta: { link: project.meta?.link },
+        item: project.repository,
+        meta: { link: project.repository.url },
+        errorsData: project.errorsData,
       });
 
       await newProjectDocument.save();
@@ -227,53 +215,59 @@ export class ProjectsService implements OnModuleInit {
       Logger.error(error);
     }
   }
-
   private buildLanguageUniqueArray(
-    projects: IGithubGQLResponse<IGQLProjectResponse>[],
+    projects: SummaryProjectType['repository'][],
   ): string[] {
     // create a array of unique languages
-    const languages = projects.reduce((acc: string[], project) => {
-      const languages = project.item?.data?.repository.languages?.edges?.map(
-        (edge) => edge.node.name,
-      );
-      if (!languages) return acc;
-      languages.forEach((tag) => {
-        acc.push(tag);
-      });
-      return acc;
-    }, []);
+
+    const languages = projects
+      .flatMap((p) => {
+        return p?.languages ?? [];
+      })
+      .filter((l) => l) as string[];
 
     // return a set of unique languages
-    return [...new Set(languages)];
+    return Array.from(new Set(languages));
   }
-
-  // ******* V2 ********
-  async saveProjectsV2() {
-    const { projectData, languages, timestamp } =
-      await this.getProjectsFromGithub();
+  async getAllProjects() {
+    return await this.projectModel.find({}).exec();
+  }
+  async deletePastDuplicatedProjects() {
     try {
-      await this.saveLanguageToDb(languages, timestamp);
+      // Retrieve all projects from the database
+      const projects = await this.getAllProjects();
 
-      await Promise.all(
-        projectData.map((project) => this.saveProjectToDbV2(project)),
+      // Sort projects by update time, treating null as the oldest date
+      projects.sort((a, b) => {
+        const dateA = a.item.updatedAt
+          ? new Date(a.item.updatedAt).getTime()
+          : 0;
+        const dateB = b.item.updatedAt
+          ? new Date(b.item.updatedAt).getTime()
+          : 0;
+        return dateB - dateA;
+      });
+
+      // Filter out unique projects, keeping only the most recently updated ones
+      const uniqueProjects = projects.filter(
+        (project, index, self) =>
+          index ===
+          self.findIndex(
+            (t) =>
+              t.item.name === project.item.name &&
+              t.item.owner?.login === project.item.owner?.login,
+          ),
       );
-    } catch (error) {
-      Logger.error('Error saving data', error);
-    }
-  }
-  async getAllProjectsV2() {
-    return await this.projectModelV2.find({}).exec();
-  }
-  private async deleteAllProjectsV2() {
-    return await this.projectModelV2.deleteMany().exec();
-  }
-  private async saveProjectToDbV2(project) {
-    try {
-      const newProjectDocument = new this.projectModelV2(project);
 
-      await newProjectDocument.save();
+      // Delete all projects from the database
+      await this.projectModel.deleteMany({}).exec();
+
+      // Insert unique projects back into the database
+      await this.projectModel.insertMany(uniqueProjects);
+
+      console.log('Deleted duplicate projects and reinserted unique ones.');
     } catch (error) {
-      Logger.error(error);
+      console.error('Error deleting duplicate projects:', error);
     }
   }
 }

@@ -49,10 +49,10 @@ export class LeaderboardService implements OnModuleInit {
   }
 
   async getLeaderboardFromGithubV2(): Promise<AnalyticsDto[]> {
-    const allProjects = (await this.projectsService.getAllProjectsV2())
+    const allProjects = (await this.projectsService.getAllProjects())
       .map((p) => ({
-        owner: p.repository.owner?.login ?? '',
-        repo: p.repository.name ?? '',
+        owner: p.item.owner?.login ?? '',
+        repo: p.item.name ?? '',
       }))
       // Filter out projects without owner or repo
       .filter((p) => p.owner && p.repo);

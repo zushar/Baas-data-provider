@@ -1,21 +1,4 @@
-import { IGQLProjectResponse, ILanguagesEdge } from '@/types/project';
-
-function makeLanguages(languages: string[]): ILanguagesEdge[] {
-  return languages.map((language) => ({
-    node: {
-      name: language,
-    },
-  }));
-}
-
-function generateContributors(count: number) {
-  return new Array(count).fill(0).map((_, index) => ({
-    node: {
-      avatarUrl: `https://avatars.githubusercontent.com/u/${index}?u=85665f35541af9ada1b72952cf2a5930f7d666c3&v=4`,
-      login: `user${index}`,
-    },
-  }));
-}
+import { ProjectDBItemType } from '@/types/projectV2Schema';
 
 export default function makeMockProject(
   name: string,
@@ -23,38 +6,35 @@ export default function makeMockProject(
   languages: string[],
   createdAt?: Date,
   updatedAt?: Date,
-  contributorsCount = 1,
-): IGQLProjectResponse {
+): ProjectDBItemType {
   createdAt = createdAt || new Date();
   updatedAt = updatedAt || new Date();
-  const contributors = generateContributors(contributorsCount);
-  return {
-    data: {
-      repository: {
-        name,
-        owner: {
-          id: 'MDQ6VXNlcjEyNDMzNDQx',
-          login: ownerLogin,
-          avatarUrl:
-            'https://avatars.githubusercontent.com/u/12433441?u=85665f35541af9ada1b72952cf2a5930f7d666c3&v=4',
-        },
-        openGraphImageUrl:
-          'https://opengraph.githubassets.com/4a4e9cd0837e21a78c49c2fd8a64ee88f9290f4a5954c88debbe8701b078f051/Darkmift/open-bus-map-search',
-        description: 'open-bus-map-search',
-        url: 'https://github.com/Darkmift/open-bus-map-search',
-        createdAt,
-        updatedAt,
-        stargazerCount: 0,
-        languages: {
-          edges: makeLanguages(languages),
-        },
-        collaborators: {
-          totalCount: 1,
-        },
-        contributors: {
-          edges: contributors,
-        },
+
+  const project: ProjectDBItemType = {
+    timestamp: new Date(),
+    errorsData: null,
+    meta: { link: '' },
+    item: {
+      name: name,
+      owner: {
+        login: ownerLogin,
+        avatarUrl: `https://avatars.githubusercontent.com/u/24523?u=44ee2cafc2109ac11f98f78313a97556eaff972b&v=4`,
+        id: '1',
       },
+      description: null,
+      url: 'https://github.com/keephq/keep',
+      stargazerCount: 0,
+      languages: languages.length ? languages : [],
+      contributors: [
+        {
+          avatarUrl:
+            'https://avatars.githubusercontent.com/u/24523?u=44ee2cafc2109ac11f98f78313a97556eaff972b&v=4',
+          login: ownerLogin,
+        },
+      ],
+      createdAt: createdAt.toISOString(),
+      updatedAt: updatedAt.toISOString(),
     },
   };
+  return project;
 }
