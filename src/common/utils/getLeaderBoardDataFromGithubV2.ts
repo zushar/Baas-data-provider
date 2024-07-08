@@ -77,7 +77,8 @@ const fetchRepoData = async (owner: string, repo: string) => {
   });
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch data for ${owner}/${repo}, ${response.status}`,
+      `Failed to fetch data for ${owner}/${repo}, ${response.status} 
+      ${response.statusText}, ${await response.text()}`,
     );
   }
   // This log is for debugging purposes only
