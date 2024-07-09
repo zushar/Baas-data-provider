@@ -131,13 +131,16 @@ const processRepoDataAllTimes = (
   return acc;
 };
 
-const processRepoDataWeekly = (
+const aggregateWeeklyRepoData = (
   data: { owner: string; repo: string; json: GithubContributorStats },
   acc: Map<string, Analytics['members'][number]>,
 ): Map<string, Analytics['members'][number]> => {
   data.json.forEach((contributor) => {
     const { author, weeks } = contributor;
-    const { score, stats } = calculateTotals(weeks.slice(-1));
+    // Weeks are sorted in ascending order, so we can get the last week by slicing the last element
+    const lastWeek = weeks.slice(-1);
+    const { score, stats } = calculateTotals(lastWeek);
+    if (score === 0) return; // Skip contributors with no activity in the last week (score = 0)
 
     const member = {
       name: author.login,
@@ -168,13 +171,14 @@ const processRepoDataWeekly = (
   return acc;
 };
 
-const processRepoDataMonthly = (
+const aggregateMonthlyContributors = (
   data: { owner: string; repo: string; json: GithubContributorStats },
   acc: Map<string, Analytics['members'][number]>,
 ): Map<string, Analytics['members'][number]> => {
   data.json.forEach((contributor) => {
     const { author, weeks } = contributor;
     const { score, stats } = calculateTotals(weeks.slice(-4));
+    if (score === 0) return; // Skip contributors with no activity in the last month (score = 0)
 
     const member = {
       name: author.login,
@@ -257,24 +261,49 @@ class LeaderboardBuilder {
           json: parsedData.data,
         };
         this.leaderboard = processRepoDataAllTimes(value, this.leaderboard);
-        this.leaderboardWeekly = processRepoDataWeekly(
+        this.leaderboardWeekly = aggregateWeeklyRepoData(
           value,
           this.leaderboardWeekly,
         );
-        this.leaderboardMonthly = processRepoDataMonthly(
+        this.leaderboardMonthly = aggregateMonthlyContributors(
           value,
           this.leaderboardMonthly,
         );
 
-        const times = parsedData.data.flatMap((d) => d.weeks.map((w) => w.w));
-        if (times.length === 0) return;
-        times.sort((a, b) => b - a); // sort in descending order to get the most recent date first
-        this.allTimes.since = times.at(-1)!;
-        this.allTimes.until = times.at(0)!;
-        this.monthly.since = times.at(4)!;
-        this.monthly.until = times.at(0)!;
-        this.weekly.since = times.at(1)!;
-        this.weekly.until = times.at(0)!;
+        // const times = parsedData.data.flatMap((d) => d.weeks.map((w) => w.w));
+        const uniqueTimes = new Set<number>();
+
+        parsedData.data.forEach((d) => {
+          d.weeks.forEach((w) => {
+            uniqueTimes.add(w.w);
+          });
+        });
+
+        const uniqueTimesArray = Array.from(uniqueTimes);
+        if (uniqueTimesArray.length === 0) return;
+        uniqueTimesArray.sort((a, b) => b - a); // sort in descending order to get the most recent date first
+        this.allTimes.since = uniqueTimesArray.at(-1)!; // get the oldest date
+        this.allTimes.until = uniqueTimesArray.at(0)!; // get the most recent date
+        this.monthly.since = uniqueTimesArray.at(4)!;
+        this.monthly.until = uniqueTimesArray.at(0)!;
+        this.weekly.since = uniqueTimesArray.at(1)!;
+        this.weekly.until = uniqueTimesArray.at(0)!;
+
+        // Log this data formated for debugging purposes
+        console.log({
+          allTimes: {
+            sice: new Date(this.allTimes.since * 1000),
+            until: new Date(this.allTimes.until * 1000),
+          },
+          monthly: {
+            since: new Date(this.monthly.since * 1000),
+            until: new Date(this.monthly.until * 1000),
+          },
+          weekly: {
+            since: new Date(this.weekly.since * 1000),
+            until: new Date(this.weekly.until * 1000),
+          },
+        });
       } else {
         console.error('Error fetching data:', result.reason);
       }
