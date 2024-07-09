@@ -47,11 +47,11 @@ export class MembersService implements OnModuleInit {
           discordUser: memberData.meta.discordUser,
         },
         {
-          name: memberData.item?.data.user.name,
+          name: memberData.item?.data?.user?.name,
           discordUser: memberData.meta.discordUser,
           links: memberData.meta.links,
           description:
-            memberData.item?.data.user.bioHTML || memberData.meta.description,
+            memberData.item?.data?.user?.bioHTML || memberData.meta.description,
           item: memberData,
           meta: memberData.meta,
           timestamp,
