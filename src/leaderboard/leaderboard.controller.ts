@@ -5,11 +5,6 @@ import { LeaderboardService } from './leaderboard.service';
 export class LeaderboardController {
   constructor(private readonly projectsService: LeaderboardService) {}
 
-  // @Get('/')
-  async getMostRecentData() {
-    return this.projectsService.getLeaderboardFromGithubV2();
-  }
-
   @Get('/')
   async getMostRecentFromDB() {
     return this.projectsService.getLeaderboardFromDB();
