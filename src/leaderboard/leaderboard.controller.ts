@@ -3,10 +3,10 @@ import { LeaderboardService } from './leaderboard.service';
 
 @Controller('leaderboard')
 export class LeaderboardController {
-  constructor(private readonly projectsService: LeaderboardService) {}
+  constructor(private readonly leaderboardService: LeaderboardService) {}
 
   @Get('/')
   async getMostRecentFromDB() {
-    return this.projectsService.getLeaderboardFromDB();
+    return this.leaderboardService.getLeaderboardFromDB();
   }
 }
