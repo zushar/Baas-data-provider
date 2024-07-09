@@ -94,14 +94,25 @@ const fetchRepoData = async (owner: string, repo: string) => {
   return { owner, repo, json };
 };
 
+const aggWeeks = (
+  weeks: GithubContributorStats[number]['weeks'],
+  time: 'week' | 'month' | 'allTimes',
+) => {
+  if (time === 'week') return calculateTotals(weeks.slice(-1));
+  if (time === 'month') return calculateTotals(weeks.slice(-4));
+  return calculateTotals(weeks);
+};
+
 // Step 3: Error Handling and Data Processing
-const processRepoDataAllTimes = (
+const aggregateContributorData = (
   data: { owner: string; repo: string; json: GithubContributorStats },
   acc: Map<string, Analytics['members'][number]>,
+  time: 'week' | 'month' | 'allTimes',
 ): Map<string, Analytics['members'][number]> => {
   data.json.forEach((contributor) => {
     const { author, weeks } = contributor;
-    const { score, stats } = calculateTotals(weeks);
+    const { score, stats } = aggWeeks(weeks, time);
+    if (score === 0) return; // Skip contributors with no activity (score = 0)
 
     const member = {
       name: author.login,
@@ -125,80 +136,6 @@ const processRepoDataAllTimes = (
           commits: existing.stats.commits + member.stats.commits,
         },
         projects_names: existing.projects_names.concat(member.projects_names),
-      });
-    }
-  });
-
-  return acc;
-};
-
-const processRepoDataWeekly = (
-  data: { owner: string; repo: string; json: GithubContributorStats },
-  acc: Map<string, Analytics['members'][number]>,
-): Map<string, Analytics['members'][number]> => {
-  data.json.forEach((contributor) => {
-    const { author, weeks } = contributor;
-    const { score, stats } = calculateTotals(weeks.slice(-1));
-
-    const member = {
-      name: author.login,
-      node_id: author.node_id,
-      projects_names: [{ url: `${data.owner}/${data.repo}`, name: data.repo }],
-      avatar_url: author.avatar_url,
-      score,
-      stats,
-    };
-
-    if (!acc.has(member.node_id)) {
-      acc.set(member.node_id, member);
-    } else {
-      const existing = acc.get(member.node_id)!;
-      acc.set(member.node_id, {
-        ...existing,
-        score: existing.score + member.score,
-        stats: {
-          additions: existing.stats.additions + member.stats.additions,
-          deletions: existing.stats.deletions + member.stats.deletions,
-          commits: existing.stats.commits + member.stats.commits,
-        },
-        projects_names: existing.projects_names.concat(member.projects_names),
-      });
-    }
-  });
-
-  return acc;
-};
-
-const processRepoDataMonthly = (
-  data: { owner: string; repo: string; json: GithubContributorStats },
-  acc: Map<string, Analytics['members'][number]>,
-): Map<string, Analytics['members'][number]> => {
-  data.json.forEach((contributor) => {
-    const { author, weeks } = contributor;
-    const { score, stats } = calculateTotals(weeks.slice(-4));
-
-    const member = {
-      name: author.login,
-      node_id: author.node_id,
-      projects_names: [{ url: `${data.owner}/${data.repo}`, name: data.repo }],
-      avatar_url: author.avatar_url,
-      score,
-      stats,
-    };
-
-    if (!acc.has(member.node_id)) {
-      acc.set(member.node_id, member);
-    } else {
-      const existing = acc.get(member.node_id)!;
-      acc.set(member.node_id, {
-        ...existing,
-        score: existing.score + member.score,
-        stats: {
-          additions: existing.stats.additions + member.stats.additions,
-          deletions: existing.stats.deletions + member.stats.deletions,
-          commits: existing.stats.commits + member.stats.commits,
-        },
-        projects_names: [...existing.projects_names, ...member.projects_names],
       });
     }
   });
@@ -257,25 +194,40 @@ class LeaderboardBuilder {
           repo: result.value.repo,
           json: parsedData.data,
         };
-        this.leaderboard = processRepoDataAllTimes(value, this.leaderboard);
-        this.leaderboardWeekly = processRepoDataWeekly(
+        this.leaderboard = aggregateContributorData(
+          value,
+          this.leaderboard,
+          'allTimes',
+        );
+        this.leaderboardWeekly = aggregateContributorData(
           value,
           this.leaderboardWeekly,
+          'week',
         );
-        this.leaderboardMonthly = processRepoDataMonthly(
+        this.leaderboardMonthly = aggregateContributorData(
           value,
           this.leaderboardMonthly,
+          'month',
         );
 
-        const times = parsedData.data.flatMap((d) => d.weeks.map((w) => w.w));
-        if (times.length === 0) return;
-        times.sort((a, b) => b - a); // sort in descending order to get the most recent date first
-        this.allTimes.since = times.at(-1)!;
-        this.allTimes.until = times.at(0)!;
-        this.monthly.since = times.at(4)!;
-        this.monthly.until = times.at(0)!;
-        this.weekly.since = times.at(1)!;
-        this.weekly.until = times.at(0)!;
+        // const times = parsedData.data.flatMap((d) => d.weeks.map((w) => w.w));
+        const uniqueTimes = new Set<number>();
+
+        parsedData.data.forEach((d) => {
+          d.weeks.forEach((w) => {
+            uniqueTimes.add(w.w);
+          });
+        });
+
+        const uniqueTimesArray = Array.from(uniqueTimes);
+        if (uniqueTimesArray.length === 0) return;
+        uniqueTimesArray.sort((a, b) => b - a); // sort in descending order to get the most recent date first
+        this.allTimes.since = uniqueTimesArray.at(-1)!; // get the oldest date
+        this.allTimes.until = uniqueTimesArray.at(0)!; // get the most recent date
+        this.monthly.since = uniqueTimesArray.at(4)!;
+        this.monthly.until = uniqueTimesArray.at(0)!;
+        this.weekly.since = uniqueTimesArray.at(1)!;
+        this.weekly.until = uniqueTimesArray.at(0)!;
       } else {
         console.error('Error fetching data:', result.reason);
       }
