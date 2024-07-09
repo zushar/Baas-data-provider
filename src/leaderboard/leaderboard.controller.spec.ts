@@ -13,8 +13,20 @@ describe('LeaderboardController', () => {
         {
           provide: LeaderboardService,
           useValue: {
-            getLeaderboardDataFROMJSON: jest.fn().mockResolvedValue([]),
-            getLeaderboardDataFromDB: jest.fn().mockResolvedValue([]),
+            getLeaderboardFromDB: jest.fn().mockResolvedValue({
+              members: [
+                {
+                  name: 'testUser',
+                  node_id: 'node1',
+                  projects_names: [{ url: 'owner1/repo1', name: 'repo1' }],
+                  avatar_url: 'url1',
+                  score: 10,
+                  stats: { additions: 10, deletions: 5, commits: 2 },
+                },
+              ],
+              since: 1622505600, // Example timestamp
+              until: 1625097600, // Example timestamp
+            }),
           },
         },
       ],
@@ -23,13 +35,7 @@ describe('LeaderboardController', () => {
     controller = module.get<LeaderboardController>(LeaderboardController);
   });
 
-  it.skip('should return leaderboard data from JSON', async () => {
-    const data = await controller.getMostRecentData();
-    const parsed = LeaderboardAnalyticsSchema.safeParse(data);
-    expect(parsed.error).toBeUndefined();
-  });
-
-  it.skip('should return leaderboard data from DB', async () => {
+  it('should return leaderboard data from DB', async () => {
     const data = await controller.getMostRecentFromDB();
     const parsed = LeaderboardAnalyticsSchema.safeParse(data);
     expect(parsed.error).toBeUndefined();
