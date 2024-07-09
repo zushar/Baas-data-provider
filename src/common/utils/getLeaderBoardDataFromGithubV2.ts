@@ -93,14 +93,25 @@ const fetchRepoData = async (owner: string, repo: string) => {
   return { owner, repo, json };
 };
 
+const aggWeeks = (
+  weeks: GithubContributorStats[number]['weeks'],
+  time: 'week' | 'month' | 'allTimes',
+) => {
+  if (time === 'week') return calculateTotals(weeks.slice(-1));
+  if (time === 'month') return calculateTotals(weeks.slice(-4));
+  return calculateTotals(weeks);
+};
+
 // Step 3: Error Handling and Data Processing
-const processRepoDataAllTimes = (
+const aggregateContributorData = (
   data: { owner: string; repo: string; json: GithubContributorStats },
   acc: Map<string, Analytics['members'][number]>,
+  time: 'week' | 'month' | 'allTimes',
 ): Map<string, Analytics['members'][number]> => {
   data.json.forEach((contributor) => {
     const { author, weeks } = contributor;
-    const { score, stats } = calculateTotals(weeks);
+    const { score, stats } = aggWeeks(weeks, time);
+    if (score === 0) return; // Skip contributors with no activity (score = 0)
 
     const member = {
       name: author.login,
@@ -124,84 +135,6 @@ const processRepoDataAllTimes = (
           commits: existing.stats.commits + member.stats.commits,
         },
         projects_names: existing.projects_names.concat(member.projects_names),
-      });
-    }
-  });
-
-  return acc;
-};
-
-const aggregateWeeklyRepoData = (
-  data: { owner: string; repo: string; json: GithubContributorStats },
-  acc: Map<string, Analytics['members'][number]>,
-): Map<string, Analytics['members'][number]> => {
-  data.json.forEach((contributor) => {
-    const { author, weeks } = contributor;
-    // Weeks are sorted in ascending order, so we can get the last week by slicing the last element
-    const lastWeek = weeks.slice(-1);
-    const { score, stats } = calculateTotals(lastWeek);
-    if (score === 0) return; // Skip contributors with no activity in the last week (score = 0)
-
-    const member = {
-      name: author.login,
-      node_id: author.node_id,
-      projects_names: [{ url: `${data.owner}/${data.repo}`, name: data.repo }],
-      avatar_url: author.avatar_url,
-      score,
-      stats,
-    };
-
-    if (!acc.has(member.node_id)) {
-      acc.set(member.node_id, member);
-    } else {
-      const existing = acc.get(member.node_id)!;
-      acc.set(member.node_id, {
-        ...existing,
-        score: existing.score + member.score,
-        stats: {
-          additions: existing.stats.additions + member.stats.additions,
-          deletions: existing.stats.deletions + member.stats.deletions,
-          commits: existing.stats.commits + member.stats.commits,
-        },
-        projects_names: existing.projects_names.concat(member.projects_names),
-      });
-    }
-  });
-
-  return acc;
-};
-
-const aggregateMonthlyContributors = (
-  data: { owner: string; repo: string; json: GithubContributorStats },
-  acc: Map<string, Analytics['members'][number]>,
-): Map<string, Analytics['members'][number]> => {
-  data.json.forEach((contributor) => {
-    const { author, weeks } = contributor;
-    const { score, stats } = calculateTotals(weeks.slice(-4));
-    if (score === 0) return; // Skip contributors with no activity in the last month (score = 0)
-
-    const member = {
-      name: author.login,
-      node_id: author.node_id,
-      projects_names: [{ url: `${data.owner}/${data.repo}`, name: data.repo }],
-      avatar_url: author.avatar_url,
-      score,
-      stats,
-    };
-
-    if (!acc.has(member.node_id)) {
-      acc.set(member.node_id, member);
-    } else {
-      const existing = acc.get(member.node_id)!;
-      acc.set(member.node_id, {
-        ...existing,
-        score: existing.score + member.score,
-        stats: {
-          additions: existing.stats.additions + member.stats.additions,
-          deletions: existing.stats.deletions + member.stats.deletions,
-          commits: existing.stats.commits + member.stats.commits,
-        },
-        projects_names: [...existing.projects_names, ...member.projects_names],
       });
     }
   });
@@ -260,14 +193,20 @@ class LeaderboardBuilder {
           repo: result.value.repo,
           json: parsedData.data,
         };
-        this.leaderboard = processRepoDataAllTimes(value, this.leaderboard);
-        this.leaderboardWeekly = aggregateWeeklyRepoData(
+        this.leaderboard = aggregateContributorData(
+          value,
+          this.leaderboard,
+          'allTimes',
+        );
+        this.leaderboardWeekly = aggregateContributorData(
           value,
           this.leaderboardWeekly,
+          'week',
         );
-        this.leaderboardMonthly = aggregateMonthlyContributors(
+        this.leaderboardMonthly = aggregateContributorData(
           value,
           this.leaderboardMonthly,
+          'month',
         );
 
         // const times = parsedData.data.flatMap((d) => d.weeks.map((w) => w.w));
@@ -288,22 +227,6 @@ class LeaderboardBuilder {
         this.monthly.until = uniqueTimesArray.at(0)!;
         this.weekly.since = uniqueTimesArray.at(1)!;
         this.weekly.until = uniqueTimesArray.at(0)!;
-
-        // Log this data formated for debugging purposes
-        console.log({
-          allTimes: {
-            sice: new Date(this.allTimes.since * 1000),
-            until: new Date(this.allTimes.until * 1000),
-          },
-          monthly: {
-            since: new Date(this.monthly.since * 1000),
-            until: new Date(this.monthly.until * 1000),
-          },
-          weekly: {
-            since: new Date(this.weekly.since * 1000),
-            until: new Date(this.weekly.until * 1000),
-          },
-        });
       } else {
         console.error('Error fetching data:', result.reason);
       }
