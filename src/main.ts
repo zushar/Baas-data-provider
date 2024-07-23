@@ -8,14 +8,23 @@ import * as cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   try {
-    const { PORT } = app.get(RootConfig);
+    const rootConfig = app.get(RootConfig);
+    const { PORT } = rootConfig;
+
     app.use(cookieParser());
 
-    // apply global exception filter
-    const filter = new HttpExceptionFilter();
-    app.useGlobalFilters(filter);
+    // Apply global exception filter
+    app.useGlobalFilters(new HttpExceptionFilter());
 
-    // apply with class-validator
+    // Enable CORS
+    app.enableCors({
+      origin: '*', // Replace with specific origin or array of origins if needed
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    });
+
+    // Apply global validation pipe
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -26,10 +35,15 @@ async function bootstrap() {
     );
 
     await app.listen(PORT || 3000);
-    Logger.log(`Server started on port ${PORT}`);
+    Logger.log(`Server started on port ${PORT || 3000}`);
   } catch (error) {
-    Logger.error('Failed to start server', error);
-    process.exit(1);
+    if (error instanceof Error) {
+      Logger.error('Failed to start server', error.stack);
+      process.exit(1);
+    } else {
+      Logger.error('Failed to start server', error);
+      process.exit(1);
+    }
   }
 }
 bootstrap();
