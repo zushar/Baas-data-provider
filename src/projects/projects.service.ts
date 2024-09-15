@@ -39,12 +39,6 @@ export class ProjectsService implements OnModuleInit {
     await this.deletePastDuplicatedProjects();
   }
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
-  async WakeUpCron() {
-    // TODO: Implement a logic to save it on mongoDB and reset the old data
-    console.info('Wake up call');
-  }
-
   async saveProjects() {
     const { projectData, languages, timestamp } =
       await this.getProjectsFromGithub();
